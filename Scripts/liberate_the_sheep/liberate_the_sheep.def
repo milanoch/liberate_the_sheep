@@ -1,0 +1,3 @@
+LIBRARY liberate_the_sheep
+EXPORTS
+    pandaLoadPlugin
