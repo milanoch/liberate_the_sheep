@@ -44,3 +44,19 @@ target_include_directories(liberate_the_sheep PUBLIC ${PROJECT_SOURCE_DIR}/src)
 
 find_package(PandaSDK CONFIG REQUIRED)
 target_link_libraries(liberate_the_sheep PandaSDK::PandaSDK)
+
+include(CTest)
+if (BUILD_TESTING)
+    add_executable(liberate_the_sheep_logic_tests
+            tests/BoardLogicSmoke.cpp
+            src/Game/BoardModel.cpp
+            src/Game/BoardGenerator.cpp
+            src/Game/LevelCatalog.cpp
+            src/Game/BoardLayout.cpp
+            src/Game/Localization.cpp
+            src/Game/SessionState.cpp
+            src/Game/SheepAppearance.cpp
+    )
+    target_include_directories(liberate_the_sheep_logic_tests PRIVATE ${PROJECT_SOURCE_DIR}/src)
+    add_test(NAME liberate_the_sheep_logic COMMAND liberate_the_sheep_logic_tests)
+endif ()

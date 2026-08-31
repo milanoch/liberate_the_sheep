@@ -1,0 +1,807 @@
+{
+    "lightingSettings": {
+        "ambientColor": {
+            "x": 1.0,
+            "y": 1.0,
+            "z": 1.0,
+            "w": 1.0
+        },
+        "ambientIntensity": 0.12
+    },
+    "entities": [
+        {
+            "id": 576895742,
+            "tagComponent": {
+                "tag": "Camera"
+            },
+            "relationshipComponent": {
+                "parent": 0,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 10.0
+                },
+                "rotation": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0,
+                    "w": 1.0
+                },
+                "scale": {
+                    "x": 1.0,
+                    "y": 1.0,
+                    "z": 1.0
+                }
+            },
+            "cameraComponent": {
+                "isPrimary": true,
+                "camera": {
+                    "projectionType": 1,
+                    "fieldOfView": 70.0,
+                    "orthoSize": 9.0,
+                    "zNear": 0.1,
+                    "zFar": 1000.0
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            }
+        },
+        {
+            "id": 1141083978,
+            "tagComponent": {
+                "tag": "MenuBackdrop"
+            },
+            "relationshipComponent": {
+                "parent": 0,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": -3.0
+                },
+                "rotation": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0,
+                    "w": 1.0
+                },
+                "scale": {
+                    "x": 48.0,
+                    "y": 20.0,
+                    "z": 1.0
+                }
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 0.24,
+                    "y": 0.67,
+                    "z": 0.92,
+                    "w": 1.0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 0
+            },
+            "scriptListComponent": {
+                "scripts": []
+            }
+        },
+        {
+            "id": 1169849562,
+            "tagComponent": {
+                "tag": "MenuBackground"
+            },
+            "relationshipComponent": {
+                "parent": 0,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0.0,
+                    "y": -0.5,
+                    "z": -2.8
+                },
+                "rotation": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0,
+                    "w": 1.0
+                },
+                "scale": {
+                    "x": 6.0,
+                    "y": 9.0,
+                    "z": 1.0
+                }
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1.0,
+                    "y": 1.0,
+                    "z": 1.0,
+                    "w": 1.0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 2636060637
+            },
+            "scriptListComponent": {
+                "scripts": []
+            }
+        },
+        {
+            "id": 272195209,
+            "tagComponent": {
+                "tag": "MenuRunner"
+            },
+            "relationshipComponent": {
+                "parent": 0,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": -3.8,
+                    "y": -3.24,
+                    "z": -0.18
+                },
+                "rotation": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0,
+                    "w": 1.0
+                },
+                "scale": {
+                    "x": 1.05,
+                    "y": 1.0,
+                    "z": 1.0
+                }
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1.0,
+                    "y": 1.0,
+                    "z": 1.0,
+                    "w": 1.0
+                },
+                "cols": 16,
+                "rows": 9,
+                "index": 0,
+                "material": 0,
+                "texture": 2584797671
+            },
+            "scriptListComponent": {
+                "scripts": []
+            }
+        },
+        {
+            "id": 3497812601,
+            "tagComponent": {
+                "tag": "MenuObstacle"
+            },
+            "relationshipComponent": {
+                "parent": 0,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0.0,
+                    "y": -3.29,
+                    "z": -0.45
+                },
+                "rotation": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0,
+                    "w": 1.0
+                },
+                "scale": {
+                    "x": 0.95,
+                    "y": 0.62,
+                    "z": 1.0
+                }
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1.0,
+                    "y": 1.0,
+                    "z": 1.0,
+                    "w": 1.0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 766923716
+            },
+            "scriptListComponent": {
+                "scripts": []
+            }
+        },
+        {
+            "id": 2489031764,
+            "tagComponent": {
+                "tag": "MenuRunner"
+            },
+            "relationshipComponent": {
+                "parent": 0,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 4.9,
+                    "y": -3.24,
+                    "z": -0.17
+                },
+                "rotation": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0,
+                    "w": 1.0
+                },
+                "scale": {
+                    "x": -1.05,
+                    "y": 1.0,
+                    "z": 1.0
+                }
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1.0,
+                    "y": 0.975,
+                    "z": 0.92,
+                    "w": 1.0
+                },
+                "cols": 16,
+                "rows": 9,
+                "index": 0,
+                "material": 0,
+                "texture": 2584797671
+            },
+            "scriptListComponent": {
+                "scripts": []
+            }
+        },
+        {
+            "id": 389105274,
+            "tagComponent": {
+                "tag": "MenuRunner"
+            },
+            "relationshipComponent": {
+                "parent": 0,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": -6.8,
+                    "y": -3.24,
+                    "z": -0.16
+                },
+                "rotation": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0,
+                    "w": 1.0
+                },
+                "scale": {
+                    "x": 1.05,
+                    "y": 1.0,
+                    "z": 1.0
+                }
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 0.94,
+                    "y": 1.0,
+                    "z": 0.96,
+                    "w": 1.0
+                },
+                "cols": 16,
+                "rows": 9,
+                "index": 0,
+                "material": 0,
+                "texture": 2584797671
+            },
+            "scriptListComponent": {
+                "scripts": []
+            }
+        },
+        {
+            "id": 4176309821,
+            "tagComponent": {
+                "tag": "MenuRunner"
+            },
+            "relationshipComponent": {
+                "parent": 0,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 7.7,
+                    "y": -3.24,
+                    "z": -0.15
+                },
+                "rotation": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0,
+                    "w": 1.0
+                },
+                "scale": {
+                    "x": -1.05,
+                    "y": 1.0,
+                    "z": 1.0
+                }
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 0.95,
+                    "y": 0.97,
+                    "z": 1.0,
+                    "w": 1.0
+                },
+                "cols": 16,
+                "rows": 9,
+                "index": 0,
+                "material": 0,
+                "texture": 2584797671
+            },
+            "scriptListComponent": {
+                "scripts": []
+            }
+        },
+        {
+            "id": 1802745936,
+            "tagComponent": {
+                "tag": "MenuRunner"
+            },
+            "relationshipComponent": {
+                "parent": 0,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": -9.7,
+                    "y": -3.24,
+                    "z": -0.14
+                },
+                "rotation": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0,
+                    "w": 1.0
+                },
+                "scale": {
+                    "x": 1.05,
+                    "y": 1.0,
+                    "z": 1.0
+                }
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1.0,
+                    "y": 0.96,
+                    "z": 0.9,
+                    "w": 1.0
+                },
+                "cols": 16,
+                "rows": 9,
+                "index": 0,
+                "material": 0,
+                "texture": 2584797671
+            },
+            "scriptListComponent": {
+                "scripts": []
+            }
+        },
+        {
+            "id": 3049187562,
+            "tagComponent": {
+                "tag": "MenuRunner"
+            },
+            "relationshipComponent": {
+                "parent": 0,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 10.6,
+                    "y": -3.24,
+                    "z": -0.13
+                },
+                "rotation": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0,
+                    "w": 1.0
+                },
+                "scale": {
+                    "x": -1.05,
+                    "y": 1.0,
+                    "z": 1.0
+                }
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 0.92,
+                    "y": 1.0,
+                    "z": 0.95,
+                    "w": 1.0
+                },
+                "cols": 16,
+                "rows": 9,
+                "index": 0,
+                "material": 0,
+                "texture": 2584797671
+            },
+            "scriptListComponent": {
+                "scripts": []
+            }
+        },
+        {
+            "id": 512664666,
+            "tagComponent": {
+                "tag": "MenuGroundFill"
+            },
+            "relationshipComponent": {
+                "parent": 0,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0.0,
+                    "y": -4.1,
+                    "z": -1.8
+                },
+                "rotation": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0,
+                    "w": 1.0
+                },
+                "scale": {
+                    "x": 48.0,
+                    "y": 0.8,
+                    "z": 1.0
+                }
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 0.18,
+                    "y": 0.12,
+                    "z": 0.045,
+                    "w": 1.0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 0
+            },
+            "scriptListComponent": {
+                "scripts": []
+            }
+        },
+        {
+            "id": 2694541504,
+            "tagComponent": {
+                "tag": "MenuGround"
+            },
+            "relationshipComponent": {
+                "parent": 0,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0.0,
+                    "y": -3.75,
+                    "z": -1.75
+                },
+                "rotation": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0,
+                    "w": 1.0
+                },
+                "scale": {
+                    "x": 6.0,
+                    "y": 1.5,
+                    "z": 1.0
+                }
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1.0,
+                    "y": 1.0,
+                    "z": 1.0,
+                    "w": 1.0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 2180015563
+            },
+            "scriptListComponent": {
+                "scripts": []
+            }
+        },
+        {
+            "id": 4126322408,
+            "tagComponent": {
+                "tag": "MenuSun"
+            },
+            "relationshipComponent": {
+                "parent": 0,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": -2.0,
+                    "y": 4.02,
+                    "z": -2.55
+                },
+                "rotation": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0,
+                    "w": 1.0
+                },
+                "scale": {
+                    "x": 0.72,
+                    "y": 0.72,
+                    "z": 1.0
+                }
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1.0,
+                    "y": 1.0,
+                    "z": 1.0,
+                    "w": 0.92
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 2851906402
+            },
+            "scriptListComponent": {
+                "scripts": []
+            }
+        },
+        {
+            "id": 2470417044,
+            "tagComponent": {
+                "tag": "MenuCloud"
+            },
+            "relationshipComponent": {
+                "parent": 0,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": -1.0,
+                    "y": 3.95,
+                    "z": -2.35
+                },
+                "rotation": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0,
+                    "w": 1.0
+                },
+                "scale": {
+                    "x": 1.1,
+                    "y": 0.55,
+                    "z": 1.0
+                }
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1.0,
+                    "y": 1.0,
+                    "z": 1.0,
+                    "w": 0.92
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 970231573
+            },
+            "scriptListComponent": {
+                "scripts": []
+            }
+        },
+        {
+            "id": 1977455232,
+            "tagComponent": {
+                "tag": "MenuCloud"
+            },
+            "relationshipComponent": {
+                "parent": 0,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 1.3,
+                    "y": 1.0,
+                    "z": -2.32
+                },
+                "rotation": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0,
+                    "w": 1.0
+                },
+                "scale": {
+                    "x": 1.55,
+                    "y": 0.775,
+                    "z": 1.0
+                }
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1.0,
+                    "y": 1.0,
+                    "z": 1.0,
+                    "w": 0.86
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 970231573
+            },
+            "scriptListComponent": {
+                "scripts": []
+            }
+        },
+        {
+            "id": 66660857,
+            "tagComponent": {
+                "tag": "MenuCloud"
+            },
+            "relationshipComponent": {
+                "parent": 0,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": -2.3,
+                    "y": 0.15,
+                    "z": -2.38
+                },
+                "rotation": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0,
+                    "w": 1.0
+                },
+                "scale": {
+                    "x": 1.25,
+                    "y": 0.625,
+                    "z": 1.0
+                }
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 0.94,
+                    "y": 0.98,
+                    "z": 1.0,
+                    "w": 0.84
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 970231573
+            },
+            "scriptListComponent": {
+                "scripts": []
+            }
+        },
+        {
+            "id": 229248284,
+            "tagComponent": {
+                "tag": "MenuCloud"
+            },
+            "relationshipComponent": {
+                "parent": 0,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 5.8,
+                    "y": 0.55,
+                    "z": -2.3
+                },
+                "rotation": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0,
+                    "w": 1.0
+                },
+                "scale": {
+                    "x": 1.8,
+                    "y": 0.9,
+                    "z": 1.0
+                }
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1.0,
+                    "y": 0.97,
+                    "z": 0.9,
+                    "w": 0.88
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 970231573
+            },
+            "scriptListComponent": {
+                "scripts": []
+            }
+        },
+        {
+            "id": 636655708,
+            "tagComponent": {
+                "tag": "MenuController"
+            },
+            "relationshipComponent": {
+                "parent": 0,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "rotation": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0,
+                    "w": 1.0
+                },
+                "scale": {
+                    "x": 1.0,
+                    "y": 1.0,
+                    "z": 1.0
+                }
+            },
+            "scriptListComponent": {
+                "scripts": [
+                    {
+                        "name": "MenuController",
+                        "scriptFields": [
+                            {
+                                "name": "gameWorld",
+                                "fieldId": 1379573510,
+                                "type": 5,
+                                "value": 835864625
+                            },
+                            {
+                                "name": "settingsGearTexture",
+                                "fieldId": 3218919809,
+                                "type": 3,
+                                "value": 4143092831
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    ]
+}

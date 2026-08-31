@@ -1,0 +1,39 @@
+{
+    "scripts": [
+        {
+            "name": "LevelController",
+            "scriptFields": [
+                {
+                    "fieldId": 499974034,
+                    "name": "menuWorld",
+                    "type": "world"
+                },
+                {
+                    "fieldId": 2415432155,
+                    "name": "sheepTexture",
+                    "type": "texture"
+                },
+                {
+                    "fieldId": 3679026741,
+                    "name": "cameraOrthoSize",
+                    "type": "float"
+                }
+            ]
+        },
+        {
+            "name": "MenuController",
+            "scriptFields": [
+                {
+                    "fieldId": 1379573510,
+                    "name": "gameWorld",
+                    "type": "world"
+                },
+                {
+                    "fieldId": 3218919809,
+                    "name": "settingsGearTexture",
+                    "type": "texture"
+                }
+            ]
+        }
+    ]
+}
