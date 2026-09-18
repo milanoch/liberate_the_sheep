@@ -2,6 +2,9 @@
 
 #include "Game/BoardLayout.hpp"
 #include "Game/BoardModel.hpp"
+#include "Game/EscapeHerd.hpp"
+#include "Game/PastureScene.hpp"
+#include "Game/PenEscapePath.hpp"
 #include "Game/ProgressStore.hpp"
 #include "Game/SettingsStore.hpp"
 
@@ -41,8 +44,6 @@ private:
     enum class Phase {
         Loading,
         Playing,
-        Escaping,
-        Blocked,
         Victory,
         Defeat,
         Error,
@@ -54,6 +55,13 @@ private:
         Bamboo::Color baseColor{1.f, 1.f, 1.f, 1.f};
         LayoutPoint basePosition{};
         float rotationDegrees{};
+        int coat{};
+        int frame{-1};
+    };
+
+    struct BlockedReaction {
+        SheepId id{kInvalidSheepId};
+        float elapsed{};
     };
 
     PandaUI::Window window_;
@@ -64,11 +72,11 @@ private:
     BoardLayout layout_;
 
     Bamboo::EntityHandle cameraEntity_;
-    Bamboo::EntityHandle backgroundEntity_;
-    Bamboo::EntityHandle boardSurfaceEntity_;
-    Bamboo::EntityHandle boardShadowEntity_;
-    std::vector<Bamboo::EntityHandle> gridEntities_;
+    PastureScene pasture_;
+    Bamboo::TextureHandle runningSheepTexture_;
     std::vector<SheepVisual> sheepVisuals_;
+    EscapeHerd escapeHerd_;
+    std::vector<BlockedReaction> blockedReactions_;
 
     Phase phase_{Phase::Loading};
     int currentLevel_{ProgressStore::kFirstLevel};
@@ -77,12 +85,8 @@ private:
     int viewportHeight_{};
     bool startupMenuPending_{};
 
-    SheepId activeSheep_{kInvalidSheepId};
     SheepId hintedSheep_{kInvalidSheepId};
-    float animationElapsed_{};
     float hintTimeRemaining_{};
-    LayoutPoint animationStart_{};
-    LayoutPoint animationTarget_{};
 
     void createUI();
     void resolveSceneEntities();
@@ -92,13 +96,18 @@ private:
     void refreshLayout(bool force = false);
     void applyLayoutToGeneratedEntities();
     void updateAnimation(float deltaTime);
+    void updateEscapes(float deltaTime);
+    void updateBlockedReactions(float deltaTime);
     void updateHint(float deltaTime);
+    void setSheepFrame(SheepVisual &visual, int pose);
+    [[nodiscard]] float escapeRunout() const;
+    [[nodiscard]] bool isReacting(SheepId id) const noexcept;
 
     void selectCell(Cell cell);
     void beginEscape(SheepId sheepId);
     void beginBlocked(SheepId sheepId);
-    void finishEscape();
-    void finishBlocked();
+    void finishEscape(SheepId id);
+    void finishBlocked(SheepId id);
     void showHint();
     void clearHint();
     void restartLevel();
@@ -108,8 +117,6 @@ private:
     void defer(std::function<void()> action);
 
     [[nodiscard]] SheepVisual *findVisual(SheepId sheepId) noexcept;
-    [[nodiscard]] const Sheep *activeSheepModel() const noexcept;
-    [[nodiscard]] LayoutPoint escapeTarget(const Sheep &sheep) const noexcept;
 };
 
 REGISTER_SCRIPT(LevelController)

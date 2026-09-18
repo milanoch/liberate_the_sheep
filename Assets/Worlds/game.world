@@ -26,94 +26,6 @@
     },
     "entities": [
         {
-            "id": 108645165,
-            "tagComponent": {
-                "tag": "BoardShadow"
-            },
-            "relationshipComponent": {
-                "parent": 0,
-                "children": []
-            },
-            "transformComponent": {
-                "position": {
-                    "x": 0,
-                    "y": -0.699999988079071,
-                    "z": -0.800000011920929
-                },
-                "rotation": {
-                    "x": 0,
-                    "y": 0,
-                    "z": 0,
-                    "w": 1
-                },
-                "scale": {
-                    "x": 9.399999618530273,
-                    "y": 14,
-                    "z": 1
-                }
-            },
-            "spriteRendererComponent": {
-                "color": {
-                    "x": 0.10199999809265137,
-                    "y": 0.18799999356269836,
-                    "z": 0.07500000298023224,
-                    "w": 0.2800000011920929
-                },
-                "cols": 1,
-                "rows": 1,
-                "index": 0,
-                "material": 0,
-                "texture": 0
-            },
-            "scriptListComponent": {
-                "scripts": []
-            }
-        },
-        {
-            "id": 1712185333,
-            "tagComponent": {
-                "tag": "BoardSurface"
-            },
-            "relationshipComponent": {
-                "parent": 0,
-                "children": []
-            },
-            "transformComponent": {
-                "position": {
-                    "x": 0,
-                    "y": -0.550000011920929,
-                    "z": -0.699999988079071
-                },
-                "rotation": {
-                    "x": 0,
-                    "y": 0,
-                    "z": 0,
-                    "w": 1
-                },
-                "scale": {
-                    "x": 9.199999809265137,
-                    "y": 13.600000381469727,
-                    "z": 1
-                }
-            },
-            "spriteRendererComponent": {
-                "color": {
-                    "x": 0.8899999856948853,
-                    "y": 0.968999981880188,
-                    "z": 0.6430000066757202,
-                    "w": 0.23999999463558197
-                },
-                "cols": 1,
-                "rows": 1,
-                "index": 0,
-                "material": 0,
-                "texture": 0
-            },
-            "scriptListComponent": {
-                "scripts": []
-            }
-        },
-        {
             "id": 1475345488,
             "tagComponent": {
                 "tag": "Camera"
@@ -230,7 +142,7 @@
                     "w": 1
                 },
                 "scale": {
-                    "x": 12,
+                    "x": 18,
                     "y": 18,
                     "z": 1
                 }
@@ -246,7 +158,7 @@
                 "rows": 1,
                 "index": 0,
                 "material": 0,
-                "texture": 2442609895
+                "texture": 997711114
             },
             "scriptListComponent": {
                 "scripts": []
@@ -305,6 +217,3847 @@
                         ]
                     }
                 ]
+            }
+        },
+        {
+            "id": 4125826366,
+            "tagComponent": {
+                "tag": "PastureFence"
+            },
+            "relationshipComponent": {
+                "parent": 0,
+                "children": [
+                    2637322445,
+                    3121332058,
+                    1845801963,
+                    1683920806,
+                    197450213
+                ]
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            }
+        },
+        {
+            "id": 2637322445,
+            "tagComponent": {
+                "tag": "PenFenceTopGroup"
+            },
+            "relationshipComponent": {
+                "parent": 4125826366,
+                "children": [
+                    7258456,
+                    168383391,
+                    865247867,
+                    880978824,
+                    1034654329,
+                    1484011836,
+                    1828373019,
+                    2837956183,
+                    3142584074,
+                    3248104402,
+                    3318318076,
+                    3319264841,
+                    3353974350,
+                    3447103863,
+                    3724545196,
+                    4251915094
+                ]
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            }
+        },
+        {
+            "id": 7258456,
+            "tagComponent": {
+                "tag": "PenFenceTop"
+            },
+            "relationshipComponent": {
+                "parent": 2637322445,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": -1.3800000000000001,
+                    "y": 1.34,
+                    "z": 0.15
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 0.9787234042553192,
+                    "y": 0.13981762917933133,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 1
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 168383391,
+            "tagComponent": {
+                "tag": "PenFenceTop"
+            },
+            "relationshipComponent": {
+                "parent": 2637322445,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": -0.45999999999999996,
+                    "y": 1.34,
+                    "z": 0.15
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 0.9787234042553192,
+                    "y": 0.13981762917933133,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 1
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 865247867,
+            "tagComponent": {
+                "tag": "PenFenceTop"
+            },
+            "relationshipComponent": {
+                "parent": 2637322445,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0.4600000000000002,
+                    "y": 1.34,
+                    "z": 0.15
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 0.9787234042553192,
+                    "y": 0.13981762917933133,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 1
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 880978824,
+            "tagComponent": {
+                "tag": "PenFenceTop"
+            },
+            "relationshipComponent": {
+                "parent": 2637322445,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 1.3800000000000001,
+                    "y": 1.34,
+                    "z": 0.15
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 0.9787234042553192,
+                    "y": 0.13981762917933133,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 1
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 1034654329,
+            "tagComponent": {
+                "tag": "PenFenceTop"
+            },
+            "relationshipComponent": {
+                "parent": 2637322445,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 1484011836,
+            "tagComponent": {
+                "tag": "PenFenceTop"
+            },
+            "relationshipComponent": {
+                "parent": 2637322445,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 1828373019,
+            "tagComponent": {
+                "tag": "PenFenceTop"
+            },
+            "relationshipComponent": {
+                "parent": 2637322445,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 2837956183,
+            "tagComponent": {
+                "tag": "PenFenceTop"
+            },
+            "relationshipComponent": {
+                "parent": 2637322445,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 3142584074,
+            "tagComponent": {
+                "tag": "PenFenceTop"
+            },
+            "relationshipComponent": {
+                "parent": 2637322445,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 3248104402,
+            "tagComponent": {
+                "tag": "PenFenceTop"
+            },
+            "relationshipComponent": {
+                "parent": 2637322445,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 3318318076,
+            "tagComponent": {
+                "tag": "PenFenceTop"
+            },
+            "relationshipComponent": {
+                "parent": 2637322445,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 3319264841,
+            "tagComponent": {
+                "tag": "PenFenceTop"
+            },
+            "relationshipComponent": {
+                "parent": 2637322445,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 3353974350,
+            "tagComponent": {
+                "tag": "PenFenceTop"
+            },
+            "relationshipComponent": {
+                "parent": 2637322445,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 3447103863,
+            "tagComponent": {
+                "tag": "PenFenceTop"
+            },
+            "relationshipComponent": {
+                "parent": 2637322445,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 3724545196,
+            "tagComponent": {
+                "tag": "PenFenceTop"
+            },
+            "relationshipComponent": {
+                "parent": 2637322445,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 4251915094,
+            "tagComponent": {
+                "tag": "PenFenceTop"
+            },
+            "relationshipComponent": {
+                "parent": 2637322445,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 3121332058,
+            "tagComponent": {
+                "tag": "PenFenceLeftGroup"
+            },
+            "relationshipComponent": {
+                "parent": 4125826366,
+                "children": [
+                    140629984,
+                    328947170,
+                    422570420,
+                    508002797,
+                    518702178,
+                    574584311,
+                    765763092,
+                    818967510,
+                    891950672,
+                    919957445,
+                    940468437,
+                    995963042,
+                    1333813808,
+                    1586281021,
+                    3828986190,
+                    3956895693
+                ]
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            }
+        },
+        {
+            "id": 140629984,
+            "tagComponent": {
+                "tag": "PenFenceLeft"
+            },
+            "relationshipComponent": {
+                "parent": 3121332058,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": -1.84,
+                    "y": -1.88,
+                    "z": 0.15
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0.7071067811865475,
+                    "w": 0.7071067811865476
+                },
+                "scale": {
+                    "x": 0.9787234042553191,
+                    "y": 0.1398176291793313,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 1
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 328947170,
+            "tagComponent": {
+                "tag": "PenFenceLeft"
+            },
+            "relationshipComponent": {
+                "parent": 3121332058,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": -1.84,
+                    "y": -0.96,
+                    "z": 0.15
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0.7071067811865475,
+                    "w": 0.7071067811865476
+                },
+                "scale": {
+                    "x": 0.9787234042553191,
+                    "y": 0.1398176291793313,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 1
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 422570420,
+            "tagComponent": {
+                "tag": "PenFenceLeft"
+            },
+            "relationshipComponent": {
+                "parent": 3121332058,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": -1.84,
+                    "y": -0.040000000000000036,
+                    "z": 0.15
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0.7071067811865475,
+                    "w": 0.7071067811865476
+                },
+                "scale": {
+                    "x": 0.9787234042553191,
+                    "y": 0.1398176291793313,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 1
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 508002797,
+            "tagComponent": {
+                "tag": "PenFenceLeft"
+            },
+            "relationshipComponent": {
+                "parent": 3121332058,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": -1.84,
+                    "y": 0.8799999999999999,
+                    "z": 0.15
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0.7071067811865475,
+                    "w": 0.7071067811865476
+                },
+                "scale": {
+                    "x": 0.9787234042553191,
+                    "y": 0.1398176291793313,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 1
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 518702178,
+            "tagComponent": {
+                "tag": "PenFenceLeft"
+            },
+            "relationshipComponent": {
+                "parent": 3121332058,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 574584311,
+            "tagComponent": {
+                "tag": "PenFenceLeft"
+            },
+            "relationshipComponent": {
+                "parent": 3121332058,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 765763092,
+            "tagComponent": {
+                "tag": "PenFenceLeft"
+            },
+            "relationshipComponent": {
+                "parent": 3121332058,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 818967510,
+            "tagComponent": {
+                "tag": "PenFenceLeft"
+            },
+            "relationshipComponent": {
+                "parent": 3121332058,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 891950672,
+            "tagComponent": {
+                "tag": "PenFenceLeft"
+            },
+            "relationshipComponent": {
+                "parent": 3121332058,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 919957445,
+            "tagComponent": {
+                "tag": "PenFenceLeft"
+            },
+            "relationshipComponent": {
+                "parent": 3121332058,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 940468437,
+            "tagComponent": {
+                "tag": "PenFenceLeft"
+            },
+            "relationshipComponent": {
+                "parent": 3121332058,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 995963042,
+            "tagComponent": {
+                "tag": "PenFenceLeft"
+            },
+            "relationshipComponent": {
+                "parent": 3121332058,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 1333813808,
+            "tagComponent": {
+                "tag": "PenFenceLeft"
+            },
+            "relationshipComponent": {
+                "parent": 3121332058,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 1586281021,
+            "tagComponent": {
+                "tag": "PenFenceLeft"
+            },
+            "relationshipComponent": {
+                "parent": 3121332058,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 3828986190,
+            "tagComponent": {
+                "tag": "PenFenceLeft"
+            },
+            "relationshipComponent": {
+                "parent": 3121332058,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 3956895693,
+            "tagComponent": {
+                "tag": "PenFenceLeft"
+            },
+            "relationshipComponent": {
+                "parent": 3121332058,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 1845801963,
+            "tagComponent": {
+                "tag": "PenFenceRightGroup"
+            },
+            "relationshipComponent": {
+                "parent": 4125826366,
+                "children": [
+                    12533096,
+                    21124680,
+                    62854175,
+                    75174134,
+                    92009539,
+                    1235255359,
+                    1839973142,
+                    1898529988,
+                    2176961305,
+                    2531269836,
+                    2896556598,
+                    3615997581,
+                    3656733691,
+                    3805318175,
+                    4263038156,
+                    4286360566
+                ]
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            }
+        },
+        {
+            "id": 12533096,
+            "tagComponent": {
+                "tag": "PenFenceRight"
+            },
+            "relationshipComponent": {
+                "parent": 1845801963,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 1.84,
+                    "y": -1.88,
+                    "z": 0.15
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0.7071067811865475,
+                    "w": 0.7071067811865476
+                },
+                "scale": {
+                    "x": 0.9787234042553191,
+                    "y": 0.1398176291793313,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 1
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 21124680,
+            "tagComponent": {
+                "tag": "PenFenceRight"
+            },
+            "relationshipComponent": {
+                "parent": 1845801963,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 1.84,
+                    "y": -0.96,
+                    "z": 0.15
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0.7071067811865475,
+                    "w": 0.7071067811865476
+                },
+                "scale": {
+                    "x": 0.9787234042553191,
+                    "y": 0.1398176291793313,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 1
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 62854175,
+            "tagComponent": {
+                "tag": "PenFenceRight"
+            },
+            "relationshipComponent": {
+                "parent": 1845801963,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 1.84,
+                    "y": -0.040000000000000036,
+                    "z": 0.15
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0.7071067811865475,
+                    "w": 0.7071067811865476
+                },
+                "scale": {
+                    "x": 0.9787234042553191,
+                    "y": 0.1398176291793313,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 1
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 75174134,
+            "tagComponent": {
+                "tag": "PenFenceRight"
+            },
+            "relationshipComponent": {
+                "parent": 1845801963,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 1.84,
+                    "y": 0.8799999999999999,
+                    "z": 0.15
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0.7071067811865475,
+                    "w": 0.7071067811865476
+                },
+                "scale": {
+                    "x": 0.9787234042553191,
+                    "y": 0.1398176291793313,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 1
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 92009539,
+            "tagComponent": {
+                "tag": "PenFenceRight"
+            },
+            "relationshipComponent": {
+                "parent": 1845801963,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 1235255359,
+            "tagComponent": {
+                "tag": "PenFenceRight"
+            },
+            "relationshipComponent": {
+                "parent": 1845801963,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 1839973142,
+            "tagComponent": {
+                "tag": "PenFenceRight"
+            },
+            "relationshipComponent": {
+                "parent": 1845801963,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 1898529988,
+            "tagComponent": {
+                "tag": "PenFenceRight"
+            },
+            "relationshipComponent": {
+                "parent": 1845801963,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 2176961305,
+            "tagComponent": {
+                "tag": "PenFenceRight"
+            },
+            "relationshipComponent": {
+                "parent": 1845801963,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 2531269836,
+            "tagComponent": {
+                "tag": "PenFenceRight"
+            },
+            "relationshipComponent": {
+                "parent": 1845801963,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 2896556598,
+            "tagComponent": {
+                "tag": "PenFenceRight"
+            },
+            "relationshipComponent": {
+                "parent": 1845801963,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 3615997581,
+            "tagComponent": {
+                "tag": "PenFenceRight"
+            },
+            "relationshipComponent": {
+                "parent": 1845801963,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 3656733691,
+            "tagComponent": {
+                "tag": "PenFenceRight"
+            },
+            "relationshipComponent": {
+                "parent": 1845801963,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 3805318175,
+            "tagComponent": {
+                "tag": "PenFenceRight"
+            },
+            "relationshipComponent": {
+                "parent": 1845801963,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 4263038156,
+            "tagComponent": {
+                "tag": "PenFenceRight"
+            },
+            "relationshipComponent": {
+                "parent": 1845801963,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 4286360566,
+            "tagComponent": {
+                "tag": "PenFenceRight"
+            },
+            "relationshipComponent": {
+                "parent": 1845801963,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 1683920806,
+            "tagComponent": {
+                "tag": "PenFenceBottomLeftGroup"
+            },
+            "relationshipComponent": {
+                "parent": 4125826366,
+                "children": [
+                    201525669,
+                    223660373,
+                    798814332,
+                    1376008503,
+                    1604704797,
+                    2289559025,
+                    2398397340,
+                    2559557603,
+                    2675735670,
+                    3053242602,
+                    3264279829,
+                    3419469468,
+                    3595313372,
+                    3870349957,
+                    4015982598,
+                    4254430594
+                ]
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            }
+        },
+        {
+            "id": 201525669,
+            "tagComponent": {
+                "tag": "PenFenceBottomLeft"
+            },
+            "relationshipComponent": {
+                "parent": 1683920806,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": -1.49,
+                    "y": -2.34,
+                    "z": 0.15
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 0.7446808510638299,
+                    "y": 0.10638297872340427,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 1
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 223660373,
+            "tagComponent": {
+                "tag": "PenFenceBottomLeft"
+            },
+            "relationshipComponent": {
+                "parent": 1683920806,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": -0.79,
+                    "y": -2.34,
+                    "z": 0.15
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 0.7446808510638299,
+                    "y": 0.10638297872340427,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 1
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 798814332,
+            "tagComponent": {
+                "tag": "PenFenceBottomLeft"
+            },
+            "relationshipComponent": {
+                "parent": 1683920806,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 1376008503,
+            "tagComponent": {
+                "tag": "PenFenceBottomLeft"
+            },
+            "relationshipComponent": {
+                "parent": 1683920806,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 1604704797,
+            "tagComponent": {
+                "tag": "PenFenceBottomLeft"
+            },
+            "relationshipComponent": {
+                "parent": 1683920806,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 2289559025,
+            "tagComponent": {
+                "tag": "PenFenceBottomLeft"
+            },
+            "relationshipComponent": {
+                "parent": 1683920806,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 2398397340,
+            "tagComponent": {
+                "tag": "PenFenceBottomLeft"
+            },
+            "relationshipComponent": {
+                "parent": 1683920806,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 2559557603,
+            "tagComponent": {
+                "tag": "PenFenceBottomLeft"
+            },
+            "relationshipComponent": {
+                "parent": 1683920806,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 2675735670,
+            "tagComponent": {
+                "tag": "PenFenceBottomLeft"
+            },
+            "relationshipComponent": {
+                "parent": 1683920806,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 3053242602,
+            "tagComponent": {
+                "tag": "PenFenceBottomLeft"
+            },
+            "relationshipComponent": {
+                "parent": 1683920806,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 3264279829,
+            "tagComponent": {
+                "tag": "PenFenceBottomLeft"
+            },
+            "relationshipComponent": {
+                "parent": 1683920806,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 3419469468,
+            "tagComponent": {
+                "tag": "PenFenceBottomLeft"
+            },
+            "relationshipComponent": {
+                "parent": 1683920806,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 3595313372,
+            "tagComponent": {
+                "tag": "PenFenceBottomLeft"
+            },
+            "relationshipComponent": {
+                "parent": 1683920806,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 3870349957,
+            "tagComponent": {
+                "tag": "PenFenceBottomLeft"
+            },
+            "relationshipComponent": {
+                "parent": 1683920806,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 4015982598,
+            "tagComponent": {
+                "tag": "PenFenceBottomLeft"
+            },
+            "relationshipComponent": {
+                "parent": 1683920806,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 4254430594,
+            "tagComponent": {
+                "tag": "PenFenceBottomLeft"
+            },
+            "relationshipComponent": {
+                "parent": 1683920806,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 197450213,
+            "tagComponent": {
+                "tag": "PenFenceBottomRightGroup"
+            },
+            "relationshipComponent": {
+                "parent": 4125826366,
+                "children": [
+                    87115229,
+                    490153978,
+                    787838148,
+                    1099952720,
+                    1170366942,
+                    1702897068,
+                    1804389259,
+                    2395614163,
+                    2653375212,
+                    2710096315,
+                    2762475633,
+                    2933889947,
+                    3437195142,
+                    3655828402,
+                    3838209720,
+                    4174003794
+                ]
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            }
+        },
+        {
+            "id": 87115229,
+            "tagComponent": {
+                "tag": "PenFenceBottomRight"
+            },
+            "relationshipComponent": {
+                "parent": 197450213,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0.79,
+                    "y": -2.34,
+                    "z": 0.15
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 0.7446808510638299,
+                    "y": 0.10638297872340427,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 1
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 490153978,
+            "tagComponent": {
+                "tag": "PenFenceBottomRight"
+            },
+            "relationshipComponent": {
+                "parent": 197450213,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 1.49,
+                    "y": -2.34,
+                    "z": 0.15
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 0.7446808510638299,
+                    "y": 0.10638297872340427,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 1
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 787838148,
+            "tagComponent": {
+                "tag": "PenFenceBottomRight"
+            },
+            "relationshipComponent": {
+                "parent": 197450213,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 1099952720,
+            "tagComponent": {
+                "tag": "PenFenceBottomRight"
+            },
+            "relationshipComponent": {
+                "parent": 197450213,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 1170366942,
+            "tagComponent": {
+                "tag": "PenFenceBottomRight"
+            },
+            "relationshipComponent": {
+                "parent": 197450213,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 1702897068,
+            "tagComponent": {
+                "tag": "PenFenceBottomRight"
+            },
+            "relationshipComponent": {
+                "parent": 197450213,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 1804389259,
+            "tagComponent": {
+                "tag": "PenFenceBottomRight"
+            },
+            "relationshipComponent": {
+                "parent": 197450213,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 2395614163,
+            "tagComponent": {
+                "tag": "PenFenceBottomRight"
+            },
+            "relationshipComponent": {
+                "parent": 197450213,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 2653375212,
+            "tagComponent": {
+                "tag": "PenFenceBottomRight"
+            },
+            "relationshipComponent": {
+                "parent": 197450213,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 2710096315,
+            "tagComponent": {
+                "tag": "PenFenceBottomRight"
+            },
+            "relationshipComponent": {
+                "parent": 197450213,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 2762475633,
+            "tagComponent": {
+                "tag": "PenFenceBottomRight"
+            },
+            "relationshipComponent": {
+                "parent": 197450213,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 2933889947,
+            "tagComponent": {
+                "tag": "PenFenceBottomRight"
+            },
+            "relationshipComponent": {
+                "parent": 197450213,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 3437195142,
+            "tagComponent": {
+                "tag": "PenFenceBottomRight"
+            },
+            "relationshipComponent": {
+                "parent": 197450213,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 3655828402,
+            "tagComponent": {
+                "tag": "PenFenceBottomRight"
+            },
+            "relationshipComponent": {
+                "parent": 197450213,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 3838209720,
+            "tagComponent": {
+                "tag": "PenFenceBottomRight"
+            },
+            "relationshipComponent": {
+                "parent": 197450213,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 4174003794,
+            "tagComponent": {
+                "tag": "PenFenceBottomRight"
+            },
+            "relationshipComponent": {
+                "parent": 197450213,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 1435494927
+            }
+        },
+        {
+            "id": 3108034479,
+            "tagComponent": {
+                "tag": "GameSheepRunTemplate"
+            },
+            "relationshipComponent": {
+                "parent": 0,
+                "children": []
+            },
+            "transformComponent": {
+                "position": {
+                    "x": -1000,
+                    "y": -1000,
+                    "z": -10
+                },
+                "rotation": {
+                    "x": 0,
+                    "y": 0,
+                    "z": 0,
+                    "w": 1
+                },
+                "scale": {
+                    "x": 1.23,
+                    "y": 1.97,
+                    "z": 1
+                }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1,
+                    "w": 0
+                },
+                "cols": 25,
+                "rows": 12,
+                "index": 0,
+                "material": 0,
+                "texture": 3451186574
             }
         }
     ]

@@ -52,4 +52,17 @@ struct BoardLayout {
     LayoutInsets reservedScreenInsets = {}
 ) noexcept;
 
+// Uses the same camera and input-coordinate convention as calculateBoardLayout,
+// but reserves three cells around the flock for the escape lane and fence.
+// Returned rectangles describe only the flock, not the surrounding enclosure.
+[[nodiscard]] BoardLayout calculatePastureLayout(
+    int viewportWidth,
+    int viewportHeight,
+    int columns,
+    int rows,
+    float cameraOrthoSize,
+    LayoutPoint cameraPosition = {},
+    LayoutInsets reservedScreenInsets = {}
+) noexcept;
+
 } // namespace LiberateTheSheep::Game

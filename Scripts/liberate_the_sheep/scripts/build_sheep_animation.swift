@@ -236,6 +236,35 @@ private func cleanRunFrame(
         }
     }
 
+    // A gap enclosed by legs is not reachable from the cell edge. Generated
+    // checkerboards can therefore survive the exterior flood as an opaque white
+    // island. Real highlights form only small neutral components in these
+    // masters; the two enclosed background islands are substantially larger.
+    let minimumEnclosedBackgroundArea = 64
+    var interiorVisited = exterior
+    for start in backgroundCandidate.indices
+        where backgroundCandidate[start] && !interiorVisited[start]
+    {
+        var component = [start]
+        var componentCursor = 0
+        interiorVisited[start] = true
+        while componentCursor < component.count {
+            let current = component[componentCursor]
+            componentCursor += 1
+            for next in neighbors(of: current, width: width, height: height)
+                where backgroundCandidate[next] && !interiorVisited[next]
+            {
+                interiorVisited[next] = true
+                component.append(next)
+            }
+        }
+        if component.count >= minimumEnclosedBackgroundArea {
+            for index in component {
+                exterior[index] = true
+            }
+        }
+    }
+
     let initialMask = exterior.map { !$0 }
     let keep = largestComponent(mask: initialMask, width: width, height: height)
     for index in keep.indices {
@@ -485,7 +514,7 @@ private func normalizedSideFrame(_ frame: Bitmap) throws -> Bitmap {
     return output
 }
 
-private func recolored(_ source: Bitmap, coat: Int) -> Bitmap {
+private func recolored(_ source: Bitmap, coat: Int, sideOnly: Bool = false) -> Bitmap {
     guard coat != 0 else { return source }
     var output = source
     let dark: (Double, Double, Double)
@@ -498,11 +527,62 @@ private func recolored(_ source: Bitmap, coat: Int) -> Bitmap {
         light = (187.0, 119.0, 62.0)
     }
 
-    for index in 0..<(source.width * source.height) {
+    let pixelCount = source.width * source.height
+    var highlightWool = [Bool](repeating: false, count: pixelCount)
+    if sideOnly {
+        // Cream-colored fleece contains nearly neutral white curl highlights.
+        // Warmth alone misses those pixels and leaves white flecks on dark coats.
+        // Grow a highlight component only when its boundary touches warm wool;
+        // eye reflections stay untouched because charcoal face pixels surround
+        // them. This is color/connectivity based, not a hard-coded face rectangle.
+        var neutralHighlight = [Bool](repeating: false, count: pixelCount)
+        var warmWool = [Bool](repeating: false, count: pixelCount)
+        for index in 0..<pixelCount {
+            let color = unpremultipliedColor(source, offset: index * 4)
+            guard color.alpha > 0.001 else { continue }
+            let weight = woolWeight(red: color.red, green: color.green, blue: color.blue)
+            let minimum = min(color.red, color.green, color.blue)
+            neutralHighlight[index] = minimum >= 150.0 && weight < 0.80
+            warmWool[index] = weight >= 0.55
+        }
+        var visited = [Bool](repeating: false, count: pixelCount)
+        for start in 0..<pixelCount where neutralHighlight[start] && !visited[start] {
+            var component = [start]
+            visited[start] = true
+            var cursor = 0
+            var touchesWool = false
+            while cursor < component.count {
+                let index = component[cursor]
+                cursor += 1
+                let x = index % source.width, y = index / source.width
+                for dy in -1...1 {
+                    for dx in -1...1 where dx != 0 || dy != 0 {
+                        let nx = x + dx, ny = y + dy
+                        guard nx >= 0, nx < source.width, ny >= 0, ny < source.height else { continue }
+                        let neighbor = ny * source.width + nx
+                        if neutralHighlight[neighbor] {
+                            if !visited[neighbor] {
+                                visited[neighbor] = true
+                                component.append(neighbor)
+                            }
+                        } else if warmWool[neighbor] {
+                            touchesWool = true
+                        }
+                    }
+                }
+            }
+            if touchesWool {
+                for index in component { highlightWool[index] = true }
+            }
+        }
+    }
+
+    for index in 0..<pixelCount {
         let offset = index * 4
         let color = unpremultipliedColor(source, offset: offset)
         guard color.alpha > 0.001 else { continue }
-        let rawWeight = woolWeight(red: color.red, green: color.green, blue: color.blue)
+        let rawWeight = highlightWool[index] ? 1.0
+            : woolWeight(red: color.red, green: color.green, blue: color.blue)
         guard rawWeight > 0.035 else { continue }
         let weight = clamp01(pow(rawWeight, 0.52) * 1.24)
         let luminance =
@@ -658,7 +738,7 @@ private func build(
         let coatBase = coat * sideCoatStride
         for index in 0..<runFrameCount {
             copyCell(
-                recolored(runFrames[index], coat: coat),
+                recolored(runFrames[index], coat: coat, sideOnly: true),
                 index: coatBase + index,
                 columns: sideOutputColumns,
                 output: &sideOutput
@@ -666,7 +746,7 @@ private func build(
         }
         for index in 0..<jumpFrameCount {
             copyCell(
-                recolored(jumpFrames[index], coat: coat),
+                recolored(jumpFrames[index], coat: coat, sideOnly: true),
                 index: coatBase + runFrameCount + index,
                 columns: sideOutputColumns,
                 output: &sideOutput

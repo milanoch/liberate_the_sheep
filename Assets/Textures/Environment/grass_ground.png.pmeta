@@ -2,9 +2,9 @@
     "id": 2180015563,
     "type": 1,
     "meta": {
-        "minFiltering": 5,
+        "minFiltering": 1,
         "magFiltering": 1,
-        "numMips": 16,
+        "numMips": 0,
         "srgb": true
     }
 }

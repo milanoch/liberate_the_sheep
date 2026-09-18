@@ -1,6 +1,7 @@
 #include "Game/BoardLayout.hpp"
 
 #include <algorithm>
+#include <limits>
 
 namespace LiberateTheSheep::Game {
 namespace {
@@ -94,6 +95,54 @@ BoardLayout calculateBoardLayout(
                                     visibleHalfHeight;
     layout.worldRect.y = boardWorldTop - layout.worldRect.height;
 
+    return layout;
+}
+
+BoardLayout calculatePastureLayout(
+    int viewportWidth,
+    int viewportHeight,
+    int columns,
+    int rows,
+    float cameraOrthoSize,
+    LayoutPoint cameraPosition,
+    LayoutInsets reservedScreenInsets
+) noexcept {
+    constexpr int kMarginCells = 3;
+    constexpr int kExtraCells = 2 * kMarginCells;
+    if (columns <= 0 || rows <= 0 ||
+        columns > std::numeric_limits<int>::max() - kExtraCells ||
+        rows > std::numeric_limits<int>::max() - kExtraCells) {
+        BoardLayout invalid = calculateBoardLayout(
+            viewportWidth, viewportHeight, 0, 0, cameraOrthoSize,
+            cameraPosition, reservedScreenInsets
+        );
+        invalid.columns = columns;
+        invalid.rows = rows;
+        return invalid;
+    }
+
+    BoardLayout layout = calculateBoardLayout(
+        viewportWidth, viewportHeight, columns + kExtraCells, rows + kExtraCells,
+        cameraOrthoSize, cameraPosition, reservedScreenInsets
+    );
+    // Keep the exact scale and center of the fitted enclosure. Input continues
+    // to use the true board dimensions and its inset screen rectangle.
+    layout.columns = columns;
+    layout.rows = rows;
+    if (!layout.valid()) {
+        return layout;
+    }
+    const float worldMargin = static_cast<float>(kMarginCells) * layout.cellWorldSize;
+    const float pixelsPerWorldUnit = static_cast<float>(viewportHeight) / cameraOrthoSize;
+    const float screenMargin = worldMargin * pixelsPerWorldUnit;
+    layout.worldRect.x += worldMargin;
+    layout.worldRect.y += worldMargin;
+    layout.worldRect.width = static_cast<float>(columns) * layout.cellWorldSize;
+    layout.worldRect.height = static_cast<float>(rows) * layout.cellWorldSize;
+    layout.screenRect.x += screenMargin;
+    layout.screenRect.y += screenMargin;
+    layout.screenRect.width = layout.worldRect.width * pixelsPerWorldUnit;
+    layout.screenRect.height = layout.worldRect.height * pixelsPerWorldUnit;
     return layout;
 }
 

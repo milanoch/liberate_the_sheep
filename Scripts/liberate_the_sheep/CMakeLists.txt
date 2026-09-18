@@ -59,4 +59,44 @@ if (BUILD_TESTING)
     )
     target_include_directories(liberate_the_sheep_logic_tests PRIVATE ${PROJECT_SOURCE_DIR}/src)
     add_test(NAME liberate_the_sheep_logic COMMAND liberate_the_sheep_logic_tests)
+
+    add_executable(liberate_the_sheep_menu_motion_tests
+            tests/MenuSheepMotionSmoke.cpp
+            src/Game/MenuSheepMotion.cpp
+    )
+    target_include_directories(liberate_the_sheep_menu_motion_tests PRIVATE ${PROJECT_SOURCE_DIR}/src)
+    add_test(NAME liberate_the_sheep_menu_motion COMMAND liberate_the_sheep_menu_motion_tests)
+
+    add_executable(liberate_the_sheep_pen_escape_tests
+            tests/PenEscapePathSmoke.cpp
+            src/Game/PenEscapePath.cpp
+            src/Game/BoardLayout.cpp
+            src/Game/BoardModel.cpp
+            src/Game/BoardGenerator.cpp
+            src/Game/LevelCatalog.cpp
+    )
+    target_include_directories(liberate_the_sheep_pen_escape_tests PRIVATE ${PROJECT_SOURCE_DIR}/src)
+    add_test(NAME liberate_the_sheep_pen_escape COMMAND liberate_the_sheep_pen_escape_tests)
+
+    add_executable(liberate_the_sheep_escape_herd_tests
+            tests/EscapeHerdSmoke.cpp
+            src/Game/EscapeHerd.cpp
+            src/Game/EscapeTraffic.cpp
+            src/Game/PenEscapePath.cpp
+            src/Game/BoardModel.cpp
+    )
+    target_include_directories(liberate_the_sheep_escape_herd_tests PRIVATE ${PROJECT_SOURCE_DIR}/src)
+    add_test(NAME liberate_the_sheep_escape_herd COMMAND liberate_the_sheep_escape_herd_tests)
+
+    add_executable(liberate_the_sheep_escape_traffic_tests
+            tests/EscapeTrafficSmoke.cpp
+            src/Game/EscapeHerd.cpp
+            src/Game/EscapeTraffic.cpp
+            src/Game/PenEscapePath.cpp
+            src/Game/BoardModel.cpp
+            src/Game/BoardGenerator.cpp
+            src/Game/LevelCatalog.cpp
+    )
+    target_include_directories(liberate_the_sheep_escape_traffic_tests PRIVATE ${PROJECT_SOURCE_DIR}/src)
+    add_test(NAME liberate_the_sheep_escape_traffic COMMAND liberate_the_sheep_escape_traffic_tests)
 endif ()

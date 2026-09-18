@@ -5,6 +5,7 @@
 #include "Game/Localization.hpp"
 #include "Game/SessionState.hpp"
 #include "Game/SheepAppearance.hpp"
+#include "Game/SheepRunAnimation.hpp"
 #include "UI/GameplayRootView.hpp"
 
 #include <Bamboo/ApplicationAPI.hpp>
@@ -25,20 +26,15 @@ namespace LiberateTheSheep::Game {
 namespace {
 
     constexpr float kPi = 3.14159265358979323846f;
-    constexpr float kEscapeDuration = 0.42f;
     constexpr float kBlockedDuration = 0.30f;
     constexpr float kHintDuration = 2.4f;
-    constexpr float kSheepWidthInCells = 0.82f;
-    constexpr float kSheepLengthInCells = 1.78f;
-    constexpr float kGridCellFill = 0.90f;
+    // The atlas includes transparent padding. These quad sizes give a visible
+    // sheep of 0.82 x 1.78 cells, within the path planner's tested envelope.
+    constexpr float kSheepWidthInCells = 1.23f;
+    constexpr float kSheepLengthInCells = 1.97f;
 
     [[nodiscard]] float clamp01(float value) noexcept {
         return std::clamp(value, 0.f, 1.f);
-    }
-
-    [[nodiscard]] float easeOutCubic(float value) noexcept {
-        const float inverse = 1.f - clamp01(value);
-        return 1.f - inverse * inverse * inverse;
     }
 
     [[nodiscard]] float directionAngle(Direction direction) noexcept {
@@ -166,21 +162,16 @@ void LevelController::createUI() {
 
 void LevelController::resolveSceneEntities() {
     cameraEntity_ = Bamboo::WorldAPI::findByTag("Camera");
-    backgroundEntity_ = Bamboo::WorldAPI::findByTag("GameBackground");
-    boardSurfaceEntity_ = Bamboo::WorldAPI::findByTag("BoardSurface");
-    boardShadowEntity_ = Bamboo::WorldAPI::findByTag("BoardShadow");
-
+    pasture_.resolve();
+    Bamboo::EntityHandle templateEntity = Bamboo::WorldAPI::findByTag("GameSheepRunTemplate");
+    if (templateEntity.isValid()) {
+        runningSheepTexture_ = Bamboo::SpriteRendererComponentAPI::getTexture(templateEntity);
+    }
     if (!handleValid(cameraEntity_)) {
         LOG_ERROR("LevelController: Camera entity was not found");
     }
-    if (!handleValid(backgroundEntity_)) {
-        LOG_WARN("LevelController: GameBackground entity was not found");
-    }
-    if (!handleValid(boardSurfaceEntity_)) {
-        LOG_WARN("LevelController: BoardSurface entity was not found");
-    }
-    if (!handleValid(boardShadowEntity_)) {
-        LOG_WARN("LevelController: BoardShadow entity was not found");
+    if (!runningSheepTexture_.isValid()) {
+        LOG_WARN("LevelController: running sheep template missing, using standing art");
     }
 }
 
@@ -197,8 +188,6 @@ void LevelController::loadLevel(int levelNumber) {
     destroyGeneratedEntities();
     board_.reset();
     clearHint();
-    activeSheep_ = kInvalidSheepId;
-    animationElapsed_ = 0.f;
     currentLevel_ = clampedLevel;
     hearts_ = ProgressStore::kMaximumHearts;
     phase_ = Phase::Loading;
@@ -263,23 +252,6 @@ void LevelController::createGeneratedEntities(std::uint64_t appearanceSeed) {
         return;
     }
 
-    gridEntities_.reserve(static_cast<std::size_t>(board_->cellCount()));
-    for (int y = 0; y < board_->height(); ++y) {
-        for (int x = 0; x < board_->width(); ++x) {
-            Bamboo::EntityHandle entity = Bamboo::WorldAPI::createEntity("Generated Grid Cell");
-            Bamboo::EntityAPI::addComponent(
-                entity, Bamboo::ComponentType::SPRITE_RENDERER_COMPONENT
-            );
-            const bool alternate = ((x + y) & 1) != 0;
-            Bamboo::SpriteRendererComponentAPI::setColor(
-                entity,
-                alternate ? Bamboo::Color{0.24f, 0.50f, 0.20f, 0.14f}
-                          : Bamboo::Color{0.92f, 1.f, 0.72f, 0.12f}
-            );
-            gridEntities_.push_back(entity);
-        }
-    }
-
     const std::vector<SheepCoat> coatOrder = makeBalancedCoatOrder(
         board_->sheepCount(), appearanceSeed
     );
@@ -290,19 +262,17 @@ void LevelController::createGeneratedEntities(std::uint64_t appearanceSeed) {
         Bamboo::EntityAPI::addComponent(
             entity, Bamboo::ComponentType::SPRITE_RENDERER_COMPONENT
         );
-        if (sheepTexture.isValid()) {
-            Bamboo::SpriteRendererComponentAPI::setTexture(entity, sheepTexture);
-            Bamboo::SpriteRendererComponentAPI::setCell(
-                entity,
-                static_cast<int>(kSheepCoatCount),
-                1,
-                static_cast<int>(coatOrder[visualIndex])
-            );
+        Bamboo::TextureHandle texture =
+            runningSheepTexture_.isValid() ? runningSheepTexture_ : sheepTexture;
+        if (texture.isValid()) {
+            Bamboo::SpriteRendererComponentAPI::setTexture(entity, texture);
         }
 
         SheepVisual visual;
         visual.id = sheep.id;
         visual.entity = entity;
+        visual.coat = static_cast<int>(coatOrder[visualIndex]);
+        setSheepFrame(visual, 0);
         visual.baseColor = {1.f, 1.f, 1.f, 1.f};
         visual.rotationDegrees = directionAngle(sheep.direction);
         Bamboo::SpriteRendererComponentAPI::setColor(entity, visual.baseColor);
@@ -316,19 +286,14 @@ void LevelController::createGeneratedEntities(std::uint64_t appearanceSeed) {
 }
 
 void LevelController::destroyGeneratedEntities() {
-    for (Bamboo::EntityHandle &entity : gridEntities_) {
-        if (entity.isValid()) {
-            Bamboo::WorldAPI::destroyEntity(entity);
-        }
-    }
-    gridEntities_.clear();
-
     for (SheepVisual &visual : sheepVisuals_) {
         if (visual.entity.isValid()) {
             Bamboo::WorldAPI::destroyEntity(visual.entity);
         }
     }
     sheepVisuals_.clear();
+    escapeHerd_.clear();
+    blockedReactions_.clear();
 }
 
 void LevelController::refreshLayout(bool force) {
@@ -360,7 +325,7 @@ void LevelController::refreshLayout(bool force) {
         const Bamboo::Vec3 position = Bamboo::TransformComponentAPI::getPosition(cameraEntity_);
         cameraPosition = {position.x, position.y};
     }
-    layout_ = calculateBoardLayout(
+    layout_ = calculatePastureLayout(
         width,
         height,
         board_->width(),
@@ -380,46 +345,7 @@ void LevelController::refreshLayout(bool force) {
         return;
     }
 
-    const float aspect = static_cast<float>(width) / static_cast<float>(height);
-    const float visibleWidth = cameraOrthoSize * aspect;
-    const float visibleHeight = cameraOrthoSize;
-    constexpr float backgroundAspect = 2.f / 3.f;
-    float backgroundWidth = visibleWidth;
-    float backgroundHeight = visibleHeight;
-    if (visibleWidth / visibleHeight > backgroundAspect) {
-        backgroundHeight = visibleWidth / backgroundAspect;
-    } else {
-        backgroundWidth = visibleHeight * backgroundAspect;
-    }
-    if (handleValid(backgroundEntity_)) {
-        Bamboo::TransformComponentAPI::setPosition(
-            backgroundEntity_, {cameraPosition.x, cameraPosition.y, -2.f}
-        );
-        Bamboo::TransformComponentAPI::setScale(
-            backgroundEntity_, {backgroundWidth, backgroundHeight, 1.f}
-        );
-    }
-
-    const float boardCenterX = layout_.worldRect.x + layout_.worldRect.width * 0.5f;
-    const float boardCenterY = layout_.worldRect.y + layout_.worldRect.height * 0.5f;
-    if (handleValid(boardSurfaceEntity_)) {
-        Bamboo::TransformComponentAPI::setPosition(
-            boardSurfaceEntity_, {boardCenterX, boardCenterY, -0.7f}
-        );
-        Bamboo::TransformComponentAPI::setScale(
-            boardSurfaceEntity_,
-            {layout_.worldRect.width + 0.36f, layout_.worldRect.height + 0.36f, 1.f}
-        );
-    }
-    if (handleValid(boardShadowEntity_)) {
-        Bamboo::TransformComponentAPI::setPosition(
-            boardShadowEntity_, {boardCenterX, boardCenterY - 0.14f, -0.8f}
-        );
-        Bamboo::TransformComponentAPI::setScale(
-            boardShadowEntity_,
-            {layout_.worldRect.width + 0.66f, layout_.worldRect.height + 0.66f, 1.f}
-        );
-    }
+    pasture_.apply(layout_);
 
     applyLayoutToGeneratedEntities();
     if (rootView_) {
@@ -435,26 +361,6 @@ void LevelController::refreshLayout(bool force) {
 void LevelController::applyLayoutToGeneratedEntities() {
     if (!board_ || !layout_.valid()) {
         return;
-    }
-
-    std::size_t gridIndex = 0;
-    for (int y = 0; y < board_->height(); ++y) {
-        for (int x = 0; x < board_->width(); ++x) {
-            if (gridIndex >= gridEntities_.size()) {
-                break;
-            }
-            Bamboo::EntityHandle &entity = gridEntities_[gridIndex++];
-            const LayoutPoint center = layout_.cellCenter({x, y});
-            Bamboo::TransformComponentAPI::setPosition(entity, {center.x, center.y, -0.5f});
-            Bamboo::TransformComponentAPI::setScale(
-                entity,
-                {
-                    layout_.cellWorldSize * kGridCellFill,
-                    layout_.cellWorldSize * kGridCellFill,
-                    1.f,
-                }
-            );
-        }
     }
 
     for (SheepVisual &visual : sheepVisuals_) {
@@ -479,63 +385,83 @@ void LevelController::applyLayoutToGeneratedEntities() {
         );
     }
 
-    if (activeSheep_ != kInvalidSheepId) {
-        if (SheepVisual *visual = findVisual(activeSheep_)) {
-            animationStart_ = visual->basePosition;
-            if (const Sheep *sheep = activeSheepModel()) {
-                animationTarget_ = escapeTarget(*sheep);
-            }
-        }
-    }
-}
-
-void LevelController::updateAnimation(float deltaTime) {
-    if (phase_ != Phase::Escaping && phase_ != Phase::Blocked) {
-        return;
-    }
-
-    SheepVisual *visual = findVisual(activeSheep_);
-    if (visual == nullptr || !visual->entity.isValid()) {
+    // Running sheep are no longer in BoardModel. Their original placements and
+    // individual distances survive resize; only the final runout is extended.
+    if (!escapeHerd_.rebuildPaths(board_->width(), board_->height(), escapeRunout())) {
+        LOG_ERROR("LevelController: could not resize active sheep routes");
         phase_ = Phase::Error;
         return;
     }
+    updateAnimation(0.f);
+}
 
-    animationElapsed_ += deltaTime;
-    if (phase_ == Phase::Escaping) {
-        const float progress = clamp01(animationElapsed_ / kEscapeDuration);
-        const float eased = easeOutCubic(progress);
-        const float x = animationStart_.x + (animationTarget_.x - animationStart_.x) * eased;
-        const float y = animationStart_.y + (animationTarget_.y - animationStart_.y) * eased;
-        Bamboo::TransformComponentAPI::setPosition(visual->entity, {x, y, 0.1f});
-        Bamboo::TransformComponentAPI::setRotationEuler(
-            visual->entity,
-            {0.f, 0.f, visual->rotationDegrees + std::sin(progress * kPi * 4.f) * 2.5f}
-        );
-        if (progress >= 1.f) {
-            finishEscape();
-        }
+void LevelController::updateAnimation(float deltaTime) {
+    if (!board_ || !layout_.valid() || phase_ == Phase::Loading || phase_ == Phase::Error) {
         return;
     }
+    updateEscapes(deltaTime);
+    updateBlockedReactions(deltaTime);
+}
 
-    const float progress = clamp01(animationElapsed_ / kBlockedDuration);
-    const float bump = std::sin(progress * kPi) * layout_.cellWorldSize * 0.18f;
-    const Sheep *sheep = activeSheepModel();
-    const Cell delta = sheep != nullptr ? directionDelta(sheep->direction) : Cell{};
-    Bamboo::TransformComponentAPI::setPosition(
-        visual->entity,
-        {
-            animationStart_.x + static_cast<float>(delta.x) * bump,
-            animationStart_.y + static_cast<float>(delta.y) * bump,
-            0.1f,
+void LevelController::updateEscapes(float deltaTime) {
+    escapeHerd_.advance(deltaTime);
+    for (const EscapingSheep &runner : escapeHerd_.runners()) {
+        SheepVisual *visual = findVisual(runner.sheep.id);
+        if (visual == nullptr || !visual->entity.isValid()) {
+            phase_ = Phase::Error;
+            return;
         }
-    );
-    Bamboo::SpriteRendererComponentAPI::setColor(
-        visual->entity,
-        blend(visual->baseColor, Bamboo::Color{1.f, 0.28f, 0.22f, 1.f}, std::sin(progress * kPi))
-    );
-    if (progress >= 1.f) {
-        finishBlocked();
+        const EscapeGait gait = sampleEscapeGait(runner);
+        // Motion within the run frames supplies the gait. Keep the Sprite on
+        // its route without rotating or stretching the entire sheep per step.
+        const PenEscape::Sample sample = PenEscape::sample(runner.path, runner.distance);
+        const float x = layout_.worldRect.x + sample.position.x * layout_.cellWorldSize;
+        const float y = layout_.worldRect.y + sample.position.y * layout_.cellWorldSize;
+        Bamboo::TransformComponentAPI::setPosition(visual->entity, {x, y, 0.1f});
+        Bamboo::TransformComponentAPI::setRotationEuler(
+            visual->entity, {0.f, 0.f, sample.rotationDegrees}
+        );
+        Bamboo::TransformComponentAPI::setScale(visual->entity, {
+            layout_.cellWorldSize * kSheepWidthInCells,
+            layout_.cellWorldSize * kSheepLengthInCells, 1.f
+        });
+        setSheepFrame(*visual, gait.pose);
     }
+
+    // Erase state and visuals only after iteration, never invalidate another
+    // runner while updating the flock.
+    for (SheepId id : escapeHerd_.takeFinished()) {
+        finishEscape(id);
+    }
+}
+
+void LevelController::updateBlockedReactions(float deltaTime) {
+    std::vector<SheepId> completed;
+    for (auto &reaction : blockedReactions_) {
+        reaction.elapsed += deltaTime;
+        SheepVisual *visual = findVisual(reaction.id);
+        const Sheep *sheep = board_->findSheep(reaction.id);
+        if (visual == nullptr || !visual->entity.isValid() || sheep == nullptr) {
+            completed.push_back(reaction.id);
+            continue;
+        }
+        const float progress = clamp01(reaction.elapsed / kBlockedDuration);
+        const float wave = std::sin(progress * kPi);
+        const float bump = wave * layout_.cellWorldSize * 0.18f;
+        const Cell delta = directionDelta(sheep->direction);
+        Bamboo::TransformComponentAPI::setPosition(visual->entity, {
+            visual->basePosition.x + static_cast<float>(delta.x) * bump,
+            visual->basePosition.y + static_cast<float>(delta.y) * bump, 0.1f
+        });
+        Bamboo::SpriteRendererComponentAPI::setColor(
+            visual->entity, blend(visual->baseColor, Bamboo::Color{1.f, 0.28f, 0.22f, 1.f}, wave)
+        );
+        if (progress >= 1.f) { completed.push_back(reaction.id); }
+    }
+    std::erase_if(blockedReactions_, [](const BlockedReaction &reaction) {
+        return reaction.elapsed >= kBlockedDuration;
+    });
+    for (SheepId id : completed) { finishBlocked(id); }
 }
 
 void LevelController::updateHint(float deltaTime) {
@@ -562,12 +488,12 @@ void LevelController::updateHint(float deltaTime) {
 }
 
 void LevelController::selectCell(Cell cell) {
-    if (phase_ != Phase::Playing || !board_) {
+    if (phase_ != Phase::Playing || hearts_ <= 0 || !board_) {
         return;
     }
 
     const std::optional<SheepId> sheepId = board_->sheepAt(cell);
-    if (!sheepId) {
+    if (!sheepId || isReacting(*sheepId)) {
         return;
     }
 
@@ -582,85 +508,63 @@ void LevelController::selectCell(Cell cell) {
 
 void LevelController::beginEscape(SheepId sheepId) {
     SheepVisual *visual = findVisual(sheepId);
-    const Sheep *sheep = board_ ? board_->findSheep(sheepId) : nullptr;
-    if (visual == nullptr || sheep == nullptr) {
+    if (visual == nullptr || !visual->entity.isValid() || !board_ || isReacting(sheepId)) {
         return;
     }
-
-    activeSheep_ = sheepId;
-    animationElapsed_ = 0.f;
-    animationStart_ = visual->basePosition;
-    animationTarget_ = escapeTarget(*sheep);
-    phase_ = Phase::Escaping;
-    if (rootView_) {
-        rootView_->setBoardInputEnabled(false);
+    if (!escapeHerd_.launch(*board_, sheepId, escapeRunout())) {
+        LOG_ERROR("LevelController: could not start sheep %u", sheepId);
+        return;
     }
+    setSheepFrame(*visual, 0);
+    // Keep Playing and leave board input enabled. Cells are already free, and
+    // this sheep's route/animation no longer depends on subsequent selections.
+    updateHUD();
 }
 
 void LevelController::beginBlocked(SheepId sheepId) {
-    SheepVisual *visual = findVisual(sheepId);
-    if (visual == nullptr) {
+    if (findVisual(sheepId) == nullptr || isReacting(sheepId) || hearts_ <= 0) {
         return;
     }
-
-    activeSheep_ = sheepId;
-    animationElapsed_ = 0.f;
-    animationStart_ = visual->basePosition;
+    blockedReactions_.push_back({sheepId, 0.f});
     hearts_ = std::max(0, hearts_ - 1);
-    phase_ = Phase::Blocked;
     updateHUD();
-    if (rootView_) {
+    // Only defeat locks the whole field; a short reaction locks its own sheep.
+    if (hearts_ == 0 && rootView_) {
         rootView_->setBoardInputEnabled(false);
     }
 }
 
-void LevelController::finishEscape() {
-    if (!board_ || activeSheep_ == kInvalidSheepId) {
-        phase_ = Phase::Error;
-        return;
-    }
-
-    const SheepId escaped = activeSheep_;
+void LevelController::finishEscape(SheepId escaped) {
     SheepVisual *visual = findVisual(escaped);
     if (visual != nullptr && visual->entity.isValid()) {
         Bamboo::WorldAPI::destroyEntity(visual->entity);
     }
-    sheepVisuals_.erase(
-        std::remove_if(
-            sheepVisuals_.begin(),
-            sheepVisuals_.end(),
-            [escaped](const SheepVisual &candidate) { return candidate.id == escaped; }
-        ),
-        sheepVisuals_.end()
-    );
+    std::erase_if(sheepVisuals_, [escaped](const SheepVisual &candidate) {
+        return candidate.id == escaped;
+    });
 
-    if (!board_->eraseSheep(escaped)) {
-        LOG_ERROR("LevelController: escaped sheep %u was absent from the model", escaped);
-        phase_ = Phase::Error;
-        return;
-    }
-
-    activeSheep_ = kInvalidSheepId;
-    animationElapsed_ = 0.f;
     updateHUD();
-    if (board_->empty()) {
+    // Empty logical cells are not victory yet: wait for every running sheep.
+    // Escapes may also finish behind the defeat dialog without changing it.
+    if (phase_ == Phase::Playing && hearts_ > 0 && board_ &&
+        board_->empty() && escapeHerd_.empty()) {
         phase_ = Phase::Victory;
         if (progress_.recordCompletion(currentLevel_, hearts_)) {
             (void)progress_.save();
         }
         if (rootView_) {
+            rootView_->setBoardInputEnabled(false);
             rootView_->showVictory(hearts_, currentLevel_ < ProgressStore::kLastLevel);
-        }
-    } else {
-        phase_ = Phase::Playing;
-        if (rootView_) {
-            rootView_->setBoardInputEnabled(true);
         }
     }
 }
 
-void LevelController::finishBlocked() {
-    if (SheepVisual *visual = findVisual(activeSheep_)) {
+void LevelController::finishBlocked(SheepId id) {
+    // Also remove a reaction whose entity disappeared during teardown/error.
+    std::erase_if(blockedReactions_, [id](const BlockedReaction &reaction) {
+        return reaction.id == id;
+    });
+    if (SheepVisual *visual = findVisual(id)) {
         if (visual->entity.isValid()) {
             Bamboo::TransformComponentAPI::setPosition(
                 visual->entity, {visual->basePosition.x, visual->basePosition.y, 0.1f}
@@ -671,34 +575,30 @@ void LevelController::finishBlocked() {
             Bamboo::SpriteRendererComponentAPI::setColor(visual->entity, visual->baseColor);
         }
     }
-
-    activeSheep_ = kInvalidSheepId;
-    animationElapsed_ = 0.f;
-    if (hearts_ <= 0) {
+    if (hearts_ <= 0 && phase_ == Phase::Playing) {
+        clearHint();
         phase_ = Phase::Defeat;
         if (rootView_) {
+            rootView_->setBoardInputEnabled(false);
             rootView_->showDefeat();
-        }
-    } else {
-        phase_ = Phase::Playing;
-        if (rootView_) {
-            rootView_->setBoardInputEnabled(true);
         }
     }
 }
 
 void LevelController::showHint() {
-    if (phase_ != Phase::Playing || !board_) {
+    if (phase_ != Phase::Playing || hearts_ <= 0 || !board_) {
         return;
     }
 
     clearHint();
     const std::vector<SheepId> available = board_->escapableSheep();
-    if (available.empty()) {
-        LOG_WARN("LevelController: no escapable sheep found on a validated level");
+    const auto candidate = std::find_if(available.begin(), available.end(),
+        [this](SheepId id) { return !isReacting(id); });
+    if (candidate == available.end()) {
+        // All remaining sheep may already be running, or finishing a reaction.
         return;
     }
-    hintedSheep_ = available.front();
+    hintedSheep_ = *candidate;
     hintTimeRemaining_ = kHintDuration;
 }
 
@@ -739,7 +639,8 @@ void LevelController::returnToMenu() {
 void LevelController::updateHUD() {
     if (rootView_) {
         rootView_->updateHUD(
-            currentLevel_, hearts_, board_ ? static_cast<int>(board_->sheepCount()) : 0
+            currentLevel_, hearts_, board_ ?
+                static_cast<int>(board_->sheepCount() + escapeHerd_.size()) : 0
         );
     }
 }
@@ -764,19 +665,33 @@ LevelController::SheepVisual *LevelController::findVisual(SheepId sheepId) noexc
     return found == sheepVisuals_.end() ? nullptr : &*found;
 }
 
-const Sheep *LevelController::activeSheepModel() const noexcept {
-    return board_ ? board_->findSheep(activeSheep_) : nullptr;
+bool LevelController::isReacting(SheepId id) const noexcept {
+    return std::any_of(blockedReactions_.begin(), blockedReactions_.end(),
+        [id](const BlockedReaction &reaction) { return reaction.id == id; });
 }
 
-LayoutPoint LevelController::escapeTarget(const Sheep &sheep) const noexcept {
-    const Cell delta = directionDelta(sheep.direction);
-    const float distance =
-        std::max(layout_.worldRect.width, layout_.worldRect.height) +
-        layout_.cellWorldSize * 3.f;
-    return {
-        animationStart_.x + static_cast<float>(delta.x) * distance,
-        animationStart_.y + static_cast<float>(delta.y) * distance,
-    };
+float LevelController::escapeRunout() const {
+    if (!layout_.valid()) { return PenEscape::kOutsideRunout; }
+    const float cameraBottom = layout_.cameraPosition.y - layout_.cameraOrthoSize * 0.5f;
+    // Keep every sheep visible until its tail has left even a tall viewport.
+    return (layout_.worldRect.y - cameraBottom) / layout_.cellWorldSize
+        - PenEscape::kFenceOffset + 1.2f;
+}
+
+void LevelController::setSheepFrame(SheepVisual &visual, int pose) {
+    if (!runningSheepTexture_.isValid()) {
+        if (visual.frame != 0) {
+            Bamboo::SpriteRendererComponentAPI::setCell(visual.entity, 3, 1, visual.coat);
+            visual.frame = 0;
+        }
+        return;
+    }
+    const int logical = SheepRunAnimation::logicalCell(visual.coat, pose);
+    if (visual.frame == logical) { return; }
+    Bamboo::SpriteRendererComponentAPI::setCell(visual.entity,
+        SheepRunAnimation::kColumns, SheepRunAnimation::kRows,
+        SheepRunAnimation::encodedCell(visual.coat, pose));
+    visual.frame = logical;
 }
 
 } // namespace LiberateTheSheep::Game

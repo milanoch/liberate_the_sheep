@@ -1,5 +1,6 @@
 #include "Game/MenuDiorama.hpp"
 
+#include "Game/MenuSheepMotion.hpp"
 #include "Game/SheepAppearance.hpp"
 
 #include <Bamboo/ApplicationAPI.hpp>
@@ -16,24 +17,68 @@ namespace LiberateTheSheep::Game {
 namespace {
 
     constexpr float kCameraOrthoSize = 9.f;
+    constexpr float kCameraHalfHeight = kCameraOrthoSize * 0.5f;
+    // The opaque menu panorama has its playable grass line at 9% of the
+    // texture height measured from the bottom. Keep 0.9 world units of its
+    // painted soil visible below that line on every viewport shape.
+    constexpr float kBackgroundGroundFromBottom = 0.09f;
+    constexpr float kVisibleSoilDepth = 0.90f;
     constexpr float kRunnerOffscreenMargin = 1.4f;
     constexpr float kCloudOffscreenMargin = 0.35f;
-    constexpr float kMinimumJumpHalfWidth = 1.35f;
-    constexpr float kMinimumJumpHeight = 0.80f;
-    constexpr float kObstacleClearance = 0.10f;
-    // Each square atlas cell contains transparent vertical padding; the visible
-    // sheep occupies roughly 72% of the cell height.
-    constexpr float kRunnerVisibleHalfHeight = 0.36f;
-    constexpr float kRunnerSpeed = 2.05f;
     constexpr float kRunnerCenterSpacing = 2.2f;
     constexpr float kRunnerOffscreenHold = 1.f;
-    constexpr float kRunFramesPerSecond = 20.f;
+    // Visible alpha bounds of hay_bale.png, expressed from the bottom of its
+    // Sprite quad. A tiny overlap settles the bale into the grass blades.
+    constexpr float kHayVisibleBottom = 166.f / 1024.f;
+    constexpr float kHayVisibleTop = (1024.f - 117.f) / 1024.f;
+    // Alpha spans x=133..1420 in the 1536px hay texture. Enclose the
+    // painted bale about the Sprite centre, not its transparent side padding.
+    constexpr float kHayVisibleHalfWidth = 0.425f;
+    constexpr float kHayGrassOverlap = 0.025f;
     constexpr int kRunAtlasColumns = 16;
-    constexpr int kRunAtlasRows = 9;
-    constexpr int kRunFrameCount = 16;
-    constexpr int kJumpFirstFrame = 16;
+    constexpr int kRunAtlasRows = 15;
+    constexpr int kRunFrameCount = MenuSheepMotion::kRunFrames;
+    constexpr int kJumpFirstFrame = kRunFrameCount;
     constexpr int kJumpFrameCount = 24;
-    constexpr int kCoatStride = 48;
+    // Whole-sprite inbetweens preserve the original artwork. The atlas stores
+    // chronological poses with eight padding cells per coat; no runtime rig.
+    constexpr int kCoatStride = 80;
+
+    static_assert(kJumpFirstFrame + kJumpFrameCount <= kCoatStride);
+    static_assert(kCoatStride * kSheepCoatCount == kRunAtlasColumns * kRunAtlasRows);
+
+    // PandaSDK currently resolves an atlas cell as
+    //   column = index % cols, row = index % rows
+    // instead of using index / cols for the row. Convert our ordinary row-major
+    // index to the value expected by that ABI. 16 and 15 are coprime, so every
+    // physical cell has exactly one encoded value in the 240-cell range.
+    [[nodiscard]] constexpr int pandaAtlasIndex(int logicalIndex) noexcept {
+        const int column = logicalIndex % kRunAtlasColumns;
+        const int row = logicalIndex / kRunAtlasColumns;
+        const int cellCount = kRunAtlasColumns * kRunAtlasRows;
+        for (int encoded = column; encoded < cellCount; encoded += kRunAtlasColumns) {
+            if (encoded % kRunAtlasRows == row) {
+                return encoded;
+            }
+        }
+        return 0;
+    }
+
+    [[nodiscard]] constexpr bool pandaAtlasMappingIsComplete() noexcept {
+        const int cellCount = kRunAtlasColumns * kRunAtlasRows;
+        for (int logical = 0; logical < cellCount; ++logical) {
+            const int encoded = pandaAtlasIndex(logical);
+            if (
+                encoded % kRunAtlasColumns != logical % kRunAtlasColumns ||
+                encoded % kRunAtlasRows != logical / kRunAtlasColumns
+            ) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    static_assert(pandaAtlasMappingIsComplete());
 
     [[nodiscard]] bool valid(Bamboo::EntityHandle &entity) noexcept {
         return entity.isValid();
@@ -82,9 +127,12 @@ void MenuDiorama::start() {
         const Bamboo::Vec3 scale = absoluteScale(
             Bamboo::TransformComponentAPI::getScale(obstacle_)
         );
+        obstacleCameraOffsetX_ = position.x - cameraCenterX_;
         obstacleX_ = position.x;
+        obstacleDepth_ = position.z;
+        obstacleBaseScale_ = scale;
         obstacleTopY_ = position.y + scale.y * 0.5f;
-        obstacleHalfWidth_ = scale.x * 0.5f;
+        obstacleHalfWidth_ = scale.x * kHayVisibleHalfWidth;
     } else {
         obstacleX_ = cameraCenterX_;
         obstacleTopY_ = cameraCenterY_ - 2.5f;
@@ -103,15 +151,6 @@ void MenuDiorama::start() {
         );
     } else {
         LOG_WARN("MenuDiorama: MenuBackground entity was not found");
-    }
-
-    ground_ = Bamboo::WorldAPI::findByTag("MenuGround");
-    if (valid(ground_)) {
-        groundBaseScale_ = absoluteScale(
-            Bamboo::TransformComponentAPI::getScale(ground_)
-        );
-    } else {
-        LOG_WARN("MenuDiorama: MenuGround entity was not found");
     }
 
     sun_ = Bamboo::WorldAPI::findByTag("MenuSun");
@@ -147,7 +186,6 @@ void MenuDiorama::start() {
         // editor-authored direction control and remains stable across updates.
         runner.direction = scale.x < 0.f ? -1.f : 1.f;
         runner.baseScale = absoluteScale(scale);
-        runner.speed = kRunnerSpeed;
         runners_.push_back(runner);
     }
 
@@ -285,10 +323,77 @@ void MenuDiorama::refreshLayout() {
     const float aspect =
         static_cast<float>(viewportWidth_) / static_cast<float>(viewportHeight_);
     visibleHalfWidth_ = kCameraOrthoSize * aspect * 0.5f;
+    const float cameraBottom = cameraCenterY_ - kCameraHalfHeight;
+    const float cameraTop = cameraCenterY_ + kCameraHalfHeight;
+    groundSurfaceY_ = cameraBottom + kVisibleSoilDepth;
 
-    const float resetDistance = visibleHalfWidth_ + kRunnerOffscreenMargin;
+    if (valid(background_)) {
+        const float baseWidth = std::max(0.001f, backgroundBaseScale_.x);
+        const float baseHeight = std::max(0.001f, backgroundBaseScale_.y);
+        const float visibleWidth = visibleHalfWidth_ * 2.f;
+        const float heightForSoil =
+            (groundSurfaceY_ - cameraBottom) / kBackgroundGroundFromBottom;
+        const float heightForSky =
+            (cameraTop - groundSurfaceY_) /
+            (1.f - kBackgroundGroundFromBottom);
+        const float cover = std::max({
+            visibleWidth / baseWidth,
+            heightForSoil / baseHeight,
+            heightForSky / baseHeight,
+        });
+        const float scaledWidth = baseWidth * cover;
+        const float scaledHeight = baseHeight * cover;
+        const float backgroundCenterY = groundSurfaceY_ +
+            (0.5f - kBackgroundGroundFromBottom) * scaledHeight;
+        Bamboo::TransformComponentAPI::setPosition(
+            background_,
+            {
+                cameraCenterX_,
+                backgroundCenterY,
+                backgroundOrigin_.z,
+            }
+        );
+        Bamboo::TransformComponentAPI::setScale(
+            background_,
+            {scaledWidth, scaledHeight, backgroundBaseScale_.z}
+        );
+    }
+
+    if (valid(obstacle_)) {
+        obstacleX_ = cameraCenterX_ + obstacleCameraOffsetX_;
+        const float obstacleY = groundSurfaceY_ +
+            (0.5f - kHayVisibleBottom) * obstacleBaseScale_.y -
+            kHayGrassOverlap;
+        Bamboo::TransformComponentAPI::setPosition(
+            obstacle_,
+            {obstacleX_, obstacleY, obstacleDepth_}
+        );
+        obstacleTopY_ = groundSurfaceY_ - kHayGrassOverlap +
+            (kHayVisibleTop - kHayVisibleBottom) * obstacleBaseScale_.y;
+    }
+
+    for (Runner &runner : runners_) {
+        runner.groundY = groundSurfaceY_ +
+            MenuSheepMotion::kGroundOffset * runner.baseScale.y;
+    }
+    refreshRunnerSchedule();
+}
+
+void MenuDiorama::refreshRunnerSchedule() {
+    const float resetDistance = visibleHalfWidth_ + kRunnerOffscreenMargin +
+        std::abs(obstacleX_ - cameraCenterX_);
+    float longestHalfRouteTime = 0.f;
+    for (const Runner &runner : runners_) {
+        const MenuSheepMotion::JumpArc arc = MenuSheepMotion::makeJumpArc(
+            obstacleHalfWidth_, obstacleTopY_ - runner.groundY,
+            runner.baseScale.x, runner.baseScale.y
+        );
+        longestHalfRouteTime = std::max(
+            longestHalfRouteTime, MenuSheepMotion::routeTime(resetDistance, arc)
+        );
+    }
     const float directionSwitchGap =
-        2.f * resetDistance / kRunnerSpeed + kRunnerOffscreenHold;
+        2.f * longestHalfRouteTime + kRunnerOffscreenHold;
 
     const std::size_t rightCount = static_cast<std::size_t>(std::count_if(
         runners_.begin(),
@@ -333,48 +438,6 @@ void MenuDiorama::refreshLayout() {
                 static_cast<float>(runners_.size());
         }
     }
-
-    if (valid(background_)) {
-        const Bamboo::Vec3 position =
-            Bamboo::TransformComponentAPI::getPosition(background_);
-        Bamboo::TransformComponentAPI::setPosition(
-            background_,
-            {
-                cameraCenterX_ + backgroundOrigin_.x,
-                cameraCenterY_ + backgroundOrigin_.y,
-                position.z,
-            }
-        );
-        // The authored 2:3 portrait illustration keeps its aspect ratio. Narrow
-        // phones crop its sides; wide windows expose the blue MenuBackdrop and
-        // the responsive MenuGround instead of stretching the trees and hills.
-        Bamboo::TransformComponentAPI::setScale(
-            background_,
-            backgroundBaseScale_
-        );
-    }
-
-    if (valid(ground_)) {
-        const Bamboo::Vec3 position =
-            Bamboo::TransformComponentAPI::getPosition(ground_);
-        const float groundHeight = groundBaseScale_.y;
-        Bamboo::TransformComponentAPI::setPosition(
-            ground_,
-            {
-                cameraCenterX_,
-                cameraCenterY_ - kCameraOrthoSize * 0.5f + groundHeight * 0.5f,
-                position.z,
-            }
-        );
-        Bamboo::TransformComponentAPI::setScale(
-            ground_,
-            {
-                visibleHalfWidth_ * 2.f + 0.2f,
-                groundHeight,
-                groundBaseScale_.z,
-            }
-        );
-    }
 }
 
 void MenuDiorama::updateScheduledRunnerPosition(Runner &runner) const {
@@ -382,108 +445,64 @@ void MenuDiorama::updateScheduledRunnerPosition(Runner &runner) const {
         elapsed_ - runner.scheduleTime + runnerCycleDuration_ * 0.5f,
         runnerCycleDuration_
     ) - runnerCycleDuration_ * 0.5f;
-    runner.x = obstacleX_ + runner.direction * runner.speed * relativeTime;
+    const MenuSheepMotion::JumpArc arc = MenuSheepMotion::makeJumpArc(
+        obstacleHalfWidth_, obstacleTopY_ - runner.groundY,
+        runner.baseScale.x, runner.baseScale.y
+    );
+    runner.x = obstacleX_ + runner.direction *
+        MenuSheepMotion::routeDistance(relativeTime, arc);
 }
 
 void MenuDiorama::applyRunnerTransform(Runner &runner) const {
-    const float jumpHalfWidth = std::max(
-        kMinimumJumpHalfWidth,
-        obstacleHalfWidth_ + runner.baseScale.x * 0.75f
+    const MenuSheepMotion::JumpArc arc = MenuSheepMotion::makeJumpArc(
+        obstacleHalfWidth_,
+        obstacleTopY_ - runner.groundY,
+        runner.baseScale.x,
+        runner.baseScale.y
     );
-    const float normalizedDistance =
-        (runner.x - obstacleX_) / jumpHalfWidth;
-    const float jumpProgress = normalizedDistance * runner.direction;
-    const float jumpTimeline = std::clamp((jumpProgress + 1.f) * 0.5f, 0.f, 1.f);
-    constexpr float kLiftOffTimeline = 0.17f;
-    constexpr float kTouchDownTimeline = 0.83f;
-    const float airborneTimeline = std::clamp(
-        (jumpTimeline - kLiftOffTimeline) /
-            (kTouchDownTimeline - kLiftOffTimeline),
-        0.f,
-        1.f
+    const MenuSheepMotion::Pose pose = MenuSheepMotion::sample(
+        (runner.x - obstacleX_) * runner.direction, arc, runner.baseScale.y
     );
-    float jumpAmount = 0.f;
-    float jump = 0.f;
-    if (
-        std::abs(normalizedDistance) < 1.f &&
-        jumpTimeline > kLiftOffTimeline &&
-        jumpTimeline < kTouchDownTimeline
-    ) {
-        // The first four atlas poses stay on the ground for approach and
-        // compression. The body then follows one smooth parabola while the
-        // 24-frame sequence shows push, tuck, descent, contact, and recovery.
-        jumpAmount = 4.f * airborneTimeline * (1.f - airborneTimeline);
-        const float clearanceHeight =
-            obstacleTopY_ + runner.baseScale.y * kRunnerVisibleHalfHeight +
-            kObstacleClearance - runner.groundY;
-        jump = jumpAmount * std::max(kMinimumJumpHeight, clearanceHeight);
-    } else if (std::abs(normalizedDistance) < 1.f) {
-        // Anticipation and landing compression are continuous and return to
-        // zero at take-off/touch-down. They support the authored poses without
-        // reintroducing per-frame transform pops.
-        if (jumpTimeline < kLiftOffTimeline) {
-            const float anticipation = jumpTimeline / kLiftOffTimeline;
-            jump = -std::sin(anticipation * 3.14159265359f) * 0.045f;
-        } else if (jumpTimeline > kTouchDownTimeline) {
-            const float landing = (jumpTimeline - kTouchDownTimeline) /
-                (1.f - kTouchDownTimeline);
-            jump = -std::sin(landing * 3.14159265359f) * 0.035f;
-        }
-    }
-
-    const float framesPerWorldUnit = kRunFramesPerSecond / runner.speed;
-    int runFrame = 0;
-    if (jumpProgress < -1.f) {
-        const float distanceToTakeOff = (-1.f - jumpProgress) * jumpHalfWidth;
-        const int framesToTakeOff = static_cast<int>(
-            std::floor(distanceToTakeOff * framesPerWorldUnit)
-        );
-        runFrame = (kRunFrameCount - framesToTakeOff % kRunFrameCount) %
-            kRunFrameCount;
-    } else if (jumpProgress > 1.f) {
-        const float distanceFromLanding = (jumpProgress - 1.f) * jumpHalfWidth;
-        runFrame = static_cast<int>(
-            std::floor(distanceFromLanding * framesPerWorldUnit)
-        ) % kRunFrameCount;
-    }
-
+    // Articulation is baked into each complete Sprite frame. Distance selects
+    // the run phase; the jump sequence follows the faster airborne traversal.
+    const int runFrame = std::clamp(
+        static_cast<int>(std::floor(pose.runFramePosition)), 0, kRunFrameCount - 1
+    );
     const int coatBase = std::clamp(
-        runner.coat,
-        0,
-        static_cast<int>(kSheepCoatCount) - 1
+        runner.coat, 0, static_cast<int>(kSheepCoatCount) - 1
     ) * kCoatStride;
     int frame = coatBase + runFrame;
-    if (std::abs(normalizedDistance) < 1.f) {
-        const int jumpFrame = std::min(
-            kJumpFrameCount - 1,
-            static_cast<int>(std::floor(jumpTimeline * kJumpFrameCount))
+    if (pose.jumpFramePosition >= 0.f) {
+        const int jumpPose = std::clamp(
+            static_cast<int>(std::lround(pose.jumpFramePosition)), 0, kJumpFrameCount - 1
         );
-        frame = coatBase + kJumpFirstFrame + jumpFrame;
+        frame = coatBase + kJumpFirstFrame + jumpPose;
     }
 
     Bamboo::TransformComponentAPI::setPosition(
         runner.entity,
-        {runner.x, runner.groundY + jump, runner.depth}
+        {
+            runner.x + runner.direction * pose.forwardOffset,
+            runner.groundY + pose.rise,
+            runner.depth,
+        }
     );
     Bamboo::TransformComponentAPI::setScale(
         runner.entity,
         {
-            runner.direction * runner.baseScale.x,
-            runner.baseScale.y,
+            runner.direction * runner.baseScale.x * pose.scaleX,
+            runner.baseScale.y * pose.scaleY,
             runner.baseScale.z,
         }
     );
     Bamboo::TransformComponentAPI::setRotationEuler(
         runner.entity,
-        {0.f, 0.f, 0.f}
+        {0.f, 0.f, runner.direction * pose.pitchDegrees}
     );
 
     if (frame != runner.frame) {
         Bamboo::SpriteRendererComponentAPI::setCell(
-            runner.entity,
-            kRunAtlasColumns,
-            kRunAtlasRows,
-            frame
+            runner.entity, kRunAtlasColumns, kRunAtlasRows, pandaAtlasIndex(frame)
         );
         runner.frame = frame;
     }
@@ -504,7 +523,7 @@ void MenuDiorama::applySunTransform() {
     }
 
     const float responsiveAnchorX =
-        cameraCenterX_ - visibleHalfWidth_ + 1.0f;
+        cameraCenterX_ - visibleHalfWidth_ + 1.15f;
     const float driftX = std::sin(elapsed_ * 0.13f + 0.45f) * 0.13f;
     const float driftY = std::sin(elapsed_ * 0.19f) * 0.075f;
     const float breathe = 1.f + std::sin(elapsed_ * 0.23f) * 0.008f;

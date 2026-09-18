@@ -21,7 +21,6 @@ private:
         float x{};
         float groundY{};
         float depth{};
-        float speed{};
         float scheduleTime{};
         float direction{1.f};
         int coat{};
@@ -44,13 +43,12 @@ private:
     Bamboo::EntityHandle obstacle_;
     Bamboo::EntityHandle sun_;
     Bamboo::EntityHandle background_;
-    Bamboo::EntityHandle ground_;
 
     Bamboo::Vec3 sunOrigin_{};
     Bamboo::Vec3 backgroundOrigin_{};
     Bamboo::Vec3 sunBaseScale_{1.f, 1.f, 1.f};
     Bamboo::Vec3 backgroundBaseScale_{1.f, 1.f, 1.f};
-    Bamboo::Vec3 groundBaseScale_{1.f, 1.f, 1.f};
+    Bamboo::Vec3 obstacleBaseScale_{1.f, 1.f, 1.f};
 
     bool running_{true};
     std::uint32_t viewportWidth_{};
@@ -58,13 +56,17 @@ private:
     float cameraCenterX_{};
     float cameraCenterY_{};
     float visibleHalfWidth_{4.5f};
+    float groundSurfaceY_{-3.6f};
+    float obstacleCameraOffsetX_{};
     float obstacleX_{};
+    float obstacleDepth_{};
     float obstacleTopY_{};
     float obstacleHalfWidth_{0.75f};
     float runnerCycleDuration_{13.2f};
     float elapsed_{};
 
     void refreshLayout();
+    void refreshRunnerSchedule();
     void updateScheduledRunnerPosition(Runner &runner) const;
     void applyRunnerTransform(Runner &runner) const;
     void applyCloudTransform(Cloud &cloud) const;
