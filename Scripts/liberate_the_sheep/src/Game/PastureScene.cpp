@@ -1,4 +1,7 @@
 #include "Game/PastureScene.hpp"
+#include "Game/PastureSurface.hpp"
+#include "Game/PastureColorSpace.hpp"
+#include <Bamboo/Assets/AssetManagerAPI.hpp>
 #include "Game/PenEscapePath.hpp"
 
 #include <Bamboo/Components/SpriteRendererComponentAPI.hpp>
@@ -9,31 +12,117 @@
 #include <cmath>
 
 namespace LiberateTheSheep::Game {
+namespace {
+
+// Stable ordering keeps authored fence placement deterministic.
+void sortPool(std::vector<Bamboo::EntityHandle> &pool) {
+    // SDK's generic Bamboo::swap conflicts with std::sort's ADL swap.
+    for (std::size_t i = 1; i < pool.size(); ++i) {
+        const auto value = pool[i];
+        std::size_t j = i;
+        while (j > 0 && pool[j - 1].id > value.id) {
+            pool[j] = pool[j - 1];
+            --j;
+        }
+        pool[j] = value;
+    }
+}
+
+} // namespace
 
 void PastureScene::resolve() {
+    shutdown();
     background_ = Bamboo::WorldAPI::findByTag("GameBackground");
+    if (background_.isValid()) {
+        sourceTexture_ = Bamboo::SpriteRendererComponentAPI::getTexture(background_);
+        if (sourceTexture_.isValid()) {
+            // Read the imported atlas before assigning any runtime texture.
+            sourcePixels_ = Bamboo::TextureAPI::readPixelsRGBA8(sourceTexture_);
+        }
+    }
+    if (!sourcePixels_) {
+        LOG_WARN("PastureScene: cannot read imported ground artwork; reload assets");
+    }
     constexpr std::array<const char *, 5> tags{
         "PenFenceTop", "PenFenceLeft", "PenFenceRight",
         "PenFenceBottomLeft", "PenFenceBottomRight"
     };
     for (std::size_t side = 0; side < tags.size(); ++side) {
         fencePanels_[side] = Bamboo::WorldAPI::findAllByTag(tags[side]);
-        // SDK's generic Bamboo::swap conflicts with std::sort's ADL swap for
-        // EntityHandle. This tiny authored pool only needs insertion sort.
-        auto &panels = fencePanels_[side];
-        for (std::size_t i = 1; i < panels.size(); ++i) {
-            const auto value = panels[i];
-            std::size_t j = i;
-            while (j > 0 && panels[j - 1].id > value.id) {
-                panels[j] = panels[j - 1];
-                --j;
-            }
-            panels[j] = value;
-        }
+        sortPool(fencePanels_[side]);
         if (fencePanels_[side].empty()) {
             LOG_WARN("PastureScene: missing authored fence panels %s", tags[side]);
         }
     }
+}
+
+void PastureScene::shutdown() {
+    if (surfaceTexture_.isValid()) {
+        if (background_.isValid() && sourceTexture_.isValid()) {
+            Bamboo::SpriteRendererComponentAPI::setTexture(background_, sourceTexture_);
+            Bamboo::SpriteRendererComponentAPI::setCell(background_, 2, 1, 0);
+        }
+        Bamboo::AssetManagerAPI::deleteTexture(surfaceTexture_);
+    }
+    surfaceTexture_ = {};
+    sourceTexture_ = {};
+    sourcePixels_ = {};
+    background_ = {};
+    surfaceWidth_ = 0;
+    surfaceHeight_ = 0;
+}
+
+void PastureScene::captureFlock(const BoardModel &board, std::uint64_t seed) {
+    wear_.capture(board, seed);
+    surfaceSeed_ = seed;
+}
+
+void PastureScene::placeGround(const BoardLayout &board) {
+    if (!background_.isValid()) { return; }
+    const float width = board.cameraOrthoSize * board.viewportWidth / board.viewportHeight;
+    Bamboo::TransformComponentAPI::setPosition(background_,
+        {board.cameraPosition.x, board.cameraPosition.y, -2.f});
+    Bamboo::TransformComponentAPI::setScale(background_, {width, board.cameraOrthoSize, 1.f});
+    Bamboo::SpriteRendererComponentAPI::setColor(background_, {1.f, 1.f, 1.f, 1.f});
+
+    auto surface = composePastureSurface(sourcePixels_.pixels,
+        static_cast<int>(sourcePixels_.width), static_cast<int>(sourcePixels_.height),
+        board, wear_, surfaceSeed_);
+    if (!surface.valid()) {
+        // Never replace a valid image by an empty upload or display the soil
+        // half of the source atlas as the entire background.
+        if (sourceTexture_.isValid()) {
+            Bamboo::SpriteRendererComponentAPI::setTexture(background_, sourceTexture_);
+            Bamboo::SpriteRendererComponentAPI::setCell(background_, 2, 1, 0);
+        }
+        LOG_WARN("PastureScene: opaque ground composition failed; reload the new grass asset");
+        return;
+    }
+
+    Bamboo::TextureHandle next = surfaceTexture_;
+    const bool replace = !next.isValid() || surfaceWidth_ != surface.width ||
+                         surfaceHeight_ != surface.height;
+    if (replace) {
+        next = Bamboo::AssetManagerAPI::createTextureRGBA8(
+            static_cast<std::uint32_t>(surface.width), static_cast<std::uint32_t>(surface.height));
+        if (!next.isValid()) {
+            LOG_WARN("PastureScene: cannot allocate opaque ground texture");
+            return;
+        }
+    }
+    // Panda creates linear UNORM runtime textures; imported artwork is sRGB.
+    // Keep the compositor/preview in sRGB and decode once for the GPU.
+    linearizePastureForUpload(surface.rgba);
+    Bamboo::TextureAPI::updateRGBA8(next, surface.rgba.data(),
+        static_cast<std::uint32_t>(surface.rgba.size()));
+    Bamboo::SpriteRendererComponentAPI::setTexture(background_, next);
+    Bamboo::SpriteRendererComponentAPI::setCell(background_, 1, 1, 0);
+    if (replace && surfaceTexture_.isValid()) {
+        Bamboo::AssetManagerAPI::deleteTexture(surfaceTexture_);
+    }
+    surfaceTexture_ = next;
+    surfaceWidth_ = surface.width;
+    surfaceHeight_ = surface.height;
 }
 
 void PastureScene::placeSide(std::size_t side, LayoutPoint from, LayoutPoint to, float cellSize) {
@@ -65,12 +154,7 @@ void PastureScene::placeSide(std::size_t side, LayoutPoint from, LayoutPoint to,
 
 void PastureScene::apply(const BoardLayout &board) {
     if (!board.valid()) { return; }
-    if (background_.isValid()) {
-        const float width = board.cameraOrthoSize * board.viewportWidth / board.viewportHeight;
-        const float cover = std::max(width, board.cameraOrthoSize) + 0.1f;
-        Bamboo::TransformComponentAPI::setPosition(background_, {board.cameraPosition.x, board.cameraPosition.y, -2.f});
-        Bamboo::TransformComponentAPI::setScale(background_, {cover, cover, 1.f});
-    }
+    placeGround(board);
     const float c = board.cellWorldSize;
     const float left = board.worldRect.x - PenEscape::kFenceOffset * c;
     const float right = board.worldRect.x + board.worldRect.width + PenEscape::kFenceOffset * c;

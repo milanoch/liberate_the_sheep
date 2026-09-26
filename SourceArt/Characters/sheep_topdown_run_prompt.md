@@ -16,43 +16,37 @@ background before fitting the painted whole-animal frames and deriving coats.
 
 ## Reproducible runtime import
 
-`Scripts/liberate_the_sheep/scripts/build_game_sheep_run.swift` packs the selected
-whole-animal artwork into `Assets/Textures/Characters/sheep_topdown_run.png`.
-The existing `sheep_topdown.png` is an input only and is never modified.
+`Scripts/liberate_the_sheep/scripts/build_game_sheep_run.swift` bakes the
+[2026-09-21 grounded trot](sheep_topdown_grounded_trot.md) into
+`Assets/Textures/Characters/sheep_topdown_run.png`. The existing
+`sheep_topdown.png` is an input only and is never modified.
 
 The standing pose comes from its original white sheep cell, resized to 256×512.
-Both standing and running then use the SAME fleece recolour for black and brown;
-ears remain the same pink across all poses. Importing the old coloured standing
-cells directly would cause different highlights/ear colours when the run starts.
-The generated RGB checkerboard is removed only through edge-connected neutral
-pixels; its antialias fringe is reconstructed with transparent alpha. No limb
-rigging or procedural replacement of painted animals is used. Bidirectional
-macOS Vision optical flow adds eleven intermediate poses between each pair of
-painted keys, including key 8 → 1. A signed-distance matte interpolates outlines,
-with soft-alpha endpoint handling; motion-aligned colour samples blend
-continuously instead of abruptly switching source at the interval midpoint.
-This is not a dissolve between two unaligned whole-animal images.
+Standing and running share the fleece recolour for black and brown; muzzle and
+pink ears retain their colours. Since the [September 25 head fix](sheep_topdown_head_join.md),
+all running poses reuse the matching standing head/collar, feathered into the
+running shoulders without an alpha dip. The RGB checkerboard is removed only through
+edge-connected neutral pixels and its fringe is reconstructed with alpha.
 
-After dense interpolation, a rear-only horizontal correction normalizes the
-gait's uneven lateral motion onto one periodic curve. Phase is fitted to the
-eight painted rear centres. Amplitude is up to 14 pixels, constrained by the
-existing collision envelope: the baker selects one safe amplitude and centre
-for the whole cycle instead of clipping individual poses. It tries amplitudes
-from 14 down to 10 pixels in 0.25-pixel steps, allowing the centre to move at
-most 6 pixels from the painted mean, and intersects all 96 poses' safe ranges.
-The installed cycle uses 11-pixel amplitude (about 22 pixels peak-to-peak).
-The correction eases in from 62.5% to 82% of cell height and leaves the front
-half byte-identical. It replaces the earlier per-key gain, with no whole-Sprite
-wiggle or runtime deformation. The eight keys are recoloured before any
-interpolation or correction. All three coats share the white keys' optical flow,
-silhouette and rear correction; muzzle and pink-ear colours stay protected.
-Re-running a fleece flood fill on warped frames could accidentally recolour
-the face.
+The new running cycle uses the first neutral pose of the existing lively source,
+not optical-flow blends between its eight differently posed sheep. The baker
+extracts four isolated grey hoof components and the remaining painted body;
+recombining these layers restores the original pixels exactly. It then poses
+the short hooves on fixed longitudinal lanes using C++-exported ground-contact
+tracks. Wool and tail receive a separate smooth weight shift, compression and
+follow-through. This offline layering is flattened into complete sheep frames:
+there are no extra leg entities, meshes or runtime deformation. The original
+generation prompt below remains a record of how the source drawings were made,
+not a description of this replacement animation pipeline.
 
 Rebuild from the project root (the preview directory stays outside the project):
 
 ```sh
 sheep_preview_dir=$(mktemp -d)
+PANDA_SDK_DIR=/Applications/PandaEditor.app/Contents/Resources/PandaSDK/lib/cmake/PandaSDK \
+  Scripts/liberate_the_sheep/scripts/build_scripts.sh debug
+Scripts/liberate_the_sheep/bin/liberate_the_sheep_export_trot \
+  "$sheep_preview_dir/trot-tracks.csv"
 swiftc -O Scripts/liberate_the_sheep/scripts/build_game_sheep_run.swift \
   -o "$sheep_preview_dir/build_game_sheep_run"
 "$sheep_preview_dir/build_game_sheep_run" --self-test
@@ -60,40 +54,43 @@ swiftc -O Scripts/liberate_the_sheep/scripts/build_game_sheep_run.swift \
   SourceArt/Characters/sheep_topdown_run_8_lively_source.png \
   Assets/Textures/Characters/sheep_topdown.png \
   Assets/Textures/Characters/sheep_topdown_run.png \
-  "$sheep_preview_dir/previews"
+  "$sheep_preview_dir/previews" \
+  "$sheep_preview_dir/trot-tracks.csv"
 ```
 
 Layout: 6400×6144, 25 columns × 12 rows, cell size 256×512. Each coat occupies
 100 cells (four rows): standing (0), 96 running poses (1–96), empty (97–99).
 Coat blocks are white, black and brown. The 25×12 dimensions are coprime for the
 current Panda SDK's atlas-index workaround; runtime uses `SheepRunAnimation.hpp`.
-The baker checks identical standing/run coat processing, unchanged white
-standing geometry, 96 distinct poses, eight preserved key front halves, shared silhouettes between coats,
-transparent padding, valid premultiplied alpha and no white fleece islands.
+The baker checks unchanged standing poses, lossless neutral-layer extraction,
+96 distinct running poses, identical standing/run heads for every coat, opaque
+neck joins, shared silhouettes
+between coats, transparent padding, valid premultiplied alpha and no white
+fleece islands.
 It also checks the complete visible silhouette against the 0.48×0.92-cell
 traffic half-extents. Frames share one scale and are registered by head/ears,
-not the moving rear contour. The HTML preview plays at the actual full-speed
-stride duration (1.6 cells / 5.5 cells/s), alongside a labelled quarter-speed
-version for inspecting intermediate poses. A GIF's minimum delay is not used
-to judge this animation. Cyclic contour-jump metrics include the seam, and the
-rear-motion checks cover the periodic curve and fixed front half.
+not the moving rear contour. The HTML preview plays over scrolling ground at
+the actual full-speed stride duration (1.6 cells / 5.5 cells/s), alongside a
+labelled quarter-speed view. The C++ tests check fixed hoof lanes, alternating
+diagonals, continuous contact/loop transitions and distance-driven sampling
+during acceleration, braking and stops. Mathematical contact locking is exact
+for the continuous track; whole-frame atlas selection introduces up to one
+frame's travel of contact-position error (1.6 / 96 cells). A GIF's minimum delay
+is not used to judge this animation.
 
-## Current animation refinement — 2026-09-18
+To compare against a saved previous 96-pose atlas, run the compiled baker with
+`--compare-animation PREVIOUS_96.png CURRENT_96.png`. Running frames are expected
+to differ: the old sideways-moving feet and rear correction are deliberately
+replaced. Standing poses remain unchanged. At full speed the 96-pose cycle
+lasts 1.6 / 5.5 seconds; a 60 Hz display naturally skips atlas poses rather than
+slowing the cycle down. Technical validation does not replace the user's
+in-editor review. Stop Play, Reload (Cmd/Ctrl+R), then inspect the movement.
 
-This 96-pose revision supersedes the earlier 48-pose density-only update on the
-same date. The source artwork, standing poses, speed (5.5) and stride (1.6) are
-unchanged; running-frame colour interpolation and rear motion are deliberately
-reworked to remove discontinuities. It is no longer correct to require all old
-running frames to remain pixel-identical. Only the painted keys' front halves
-and the unchanged standing poses retain that guarantee. No new imagegen
-request was needed for this revision.
-
-To compare against a saved previous 48-pose atlas, run the compiled baker with
-`--compare-animation PREVIOUS_48.png CURRENT_96.png`. This comparison is for
-animation continuity and preservation checks, not the superseded requirement
-to retain every previous whole-body run frame. At full speed the 96-pose cycle
-lasts 1.6 / 5.5 seconds: runtime samples it by distance, so a 60 Hz display
-naturally skips several atlas poses rather than slowing the cycle down.
+For a head-only repair, use `--compare-head-fix BEFORE.png AFTER.png` instead:
+it requires identical standing poses and running rows 176–511, exact head
+identity with standing, continuous neck alpha and unchanged empty cells.
+The preview includes a stand/run contact sheet and an alternating start/stop
+canvas so a face-colour jump cannot hide in a running-only preview.
 
 ## Generation prompt
 

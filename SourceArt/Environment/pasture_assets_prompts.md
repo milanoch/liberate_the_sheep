@@ -5,6 +5,10 @@ Both are gameplay assets; no menu art was replaced.
 
 ## Grass
 
+Historical September 12 version. The imported grass asset now uses the
+[September 23–24 opaque ground sources](pasture_opaque_ground.md);
+the original source below is retained for reference.
+
 Final asset: `Assets/Textures/Backgrounds/pasture_grass.png`.
 Source: `SourceArt/Environment/pasture_grass_source.png`.
 
@@ -19,6 +23,12 @@ Constraints: opaque image, no transparency, no border, no vignette, no central e
 ```
 
 ## Fence panel
+
+Historical September 12 brown artwork; the current imported asset uses the
+[September 24–25 single-rail oak design](fence_oak.md). The
+[ivory redesign](fence_ivory.md) and restoration of the old brown art were both
+rejected. Canvas, scene placement and texture ID remain unchanged. The source
+and reproduction commands below describe the OLD artwork, not the active one.
 
 Final asset: `Assets/Textures/Environment/wood_fence_panel.png`.
 Source: `SourceArt/Environment/wood_fence_panel_source.png`.

@@ -45,8 +45,24 @@ target_include_directories(liberate_the_sheep PUBLIC ${PROJECT_SOURCE_DIR}/src)
 find_package(PandaSDK CONFIG REQUIRED)
 target_link_libraries(liberate_the_sheep PandaSDK::PandaSDK)
 
+# Offline animation tracks share the tested C++ stride/contact contract.
+# This is an asset-build helper, not an editor/game entry point.
+add_executable(liberate_the_sheep_export_trot tools/ExportSheepTrot.cpp)
+target_include_directories(liberate_the_sheep_export_trot PRIVATE ${PROJECT_SOURCE_DIR}/src)
+
 include(CTest)
 if (BUILD_TESTING)
+    # Produces static layout data for the offline source-art preview, not a game.
+    add_executable(liberate_the_sheep_export_pasture
+            tools/ExportPasturePreview.cpp
+            src/Game/BoardModel.cpp
+            src/Game/BoardGenerator.cpp
+            src/Game/BoardLayout.cpp
+            src/Game/LevelCatalog.cpp
+            src/Game/SheepAppearance.cpp
+            src/Game/PastureSurface.cpp)
+    target_include_directories(liberate_the_sheep_export_pasture PRIVATE ${PROJECT_SOURCE_DIR}/src)
+
     add_executable(liberate_the_sheep_logic_tests
             tests/BoardLogicSmoke.cpp
             src/Game/BoardModel.cpp
@@ -99,4 +115,28 @@ if (BUILD_TESTING)
     )
     target_include_directories(liberate_the_sheep_escape_traffic_tests PRIVATE ${PROJECT_SOURCE_DIR}/src)
     add_test(NAME liberate_the_sheep_escape_traffic COMMAND liberate_the_sheep_escape_traffic_tests)
+
+    add_executable(liberate_the_sheep_trot_motion_tests tests/SheepTrotMotionSmoke.cpp)
+    target_include_directories(liberate_the_sheep_trot_motion_tests PRIVATE ${PROJECT_SOURCE_DIR}/src)
+    add_test(NAME liberate_the_sheep_trot_motion COMMAND liberate_the_sheep_trot_motion_tests)
+
+    add_executable(liberate_the_sheep_pasture_wear_tests
+            tests/PastureWearSmoke.cpp src/Game/BoardModel.cpp)
+    target_include_directories(liberate_the_sheep_pasture_wear_tests PRIVATE ${PROJECT_SOURCE_DIR}/src)
+    add_test(NAME liberate_the_sheep_pasture_wear COMMAND liberate_the_sheep_pasture_wear_tests)
+
+    add_executable(liberate_the_sheep_pasture_ground_tests
+            tests/PastureGroundSmoke.cpp src/Game/BoardLayout.cpp src/Game/BoardModel.cpp)
+    target_include_directories(liberate_the_sheep_pasture_ground_tests PRIVATE ${PROJECT_SOURCE_DIR}/src)
+    add_test(NAME liberate_the_sheep_pasture_ground COMMAND liberate_the_sheep_pasture_ground_tests)
+
+    add_executable(liberate_the_sheep_pasture_surface_tests
+            tests/PastureSurfaceSmoke.cpp src/Game/PastureSurface.cpp
+            src/Game/BoardModel.cpp src/Game/BoardLayout.cpp)
+    target_include_directories(liberate_the_sheep_pasture_surface_tests PRIVATE ${PROJECT_SOURCE_DIR}/src)
+    add_test(NAME liberate_the_sheep_pasture_surface COMMAND liberate_the_sheep_pasture_surface_tests)
+
+    add_executable(liberate_the_sheep_pasture_color_tests tests/PastureColorSpaceSmoke.cpp)
+    target_include_directories(liberate_the_sheep_pasture_color_tests PRIVATE ${PROJECT_SOURCE_DIR}/src)
+    add_test(NAME liberate_the_sheep_pasture_color COMMAND liberate_the_sheep_pasture_color_tests)
 endif ()

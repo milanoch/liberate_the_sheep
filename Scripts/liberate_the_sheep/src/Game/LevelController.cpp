@@ -112,6 +112,7 @@ void LevelController::update(float deltaTime) {
 }
 
 void LevelController::shutdown() {
+    pasture_.shutdown();
     if (window_.isValid() && rootView_ &&
         window_.context().getRootView() == rootView_) {
         window_.setRootView(nullptr);
@@ -221,6 +222,8 @@ void LevelController::loadLevel(int levelNumber) {
     }
 
     board_.emplace(std::move(*result.board));
+    // Capture once: worn pasture does not instantly regrow as the flock leaves.
+    pasture_.captureFlock(*board_, definition->generation.seed ^ result.metrics.layoutFingerprint);
     createGeneratedEntities(
         definition->generation.seed ^ result.metrics.layoutFingerprint
     );

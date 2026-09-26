@@ -133,7 +133,7 @@
                 "position": {
                     "x": 0,
                     "y": 0,
-                    "z": -2
+                    "z": -2.05
                 },
                 "rotation": {
                     "x": 0,
@@ -154,7 +154,7 @@
                     "z": 1,
                     "w": 1
                 },
-                "cols": 1,
+                "cols": 2,
                 "rows": 1,
                 "index": 0,
                 "material": 0,

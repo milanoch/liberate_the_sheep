@@ -2,14 +2,45 @@
 
 This directory contains editable/generator source images. PandaEditor does not
 load these files at runtime; the imported, optimized atlases live under
-`Assets/Textures/Characters/` and retain their editor-issued `.pmeta` IDs.
+`Assets/Textures/` and retain their editor-issued `.pmeta` IDs.
+
+## One opaque ground surface — 2026-09-23–24
+
+The user rejected the tiled/transparent version below after it produced seams
+and black puddle outlines in Panda. The current atlas contains **two opaque
+material samples**: fresh brighter grass and light warm brown earth. One complete
+ground image is composed from the initial-flock density; it is displayed on the
+single authored GameBackground Sprite. No tile/decal sprites remain in the world.
+Sources, exact built-in imagegen prompts, packing/preview commands, tested
+linear GPU colour conversion and ownership details:
+[opaque pasture](Environment/pasture_opaque_ground.md).
+
+The user accepted this ground on September 24. The subsequent
+[ivory fence redesign](Environment/fence_ivory.md) and return to the original
+brown fence were rejected. The current [single-rail oak fence](Environment/fence_oak.md)
+has a new clean natural-wood design in strict overhead view, uniformly fitted
+to the existing texture canvas. Imported ID, Sprite layout, enclosure dimensions,
+gate opening, accepted grass and sheep animation are unchanged.
+
+## Rejected tiled grass version — 2026-09-22
+
+Previously gameplay grass used a 2048×1024, 2×1 imported atlas: dense short grass and a
+soft transparent worn-soil decal. New built-in imagegen sources, exact prompts,
+packing instructions and scale contract are in
+[short grass / wear](Environment/pasture_short_grass_prompts.md).
+The existing grass resource ID is retained. Board-relative repeating grass tiles
+keep blades small compared with sheep; an initial-flock density snapshot places
+irregular bald patches where animals crowd together. Patches remain after they
+leave. Both Sprite pools are authored in game.world, not created at runtime.
+The fence, menu and accepted gait are unchanged.
 
 ## Gameplay pasture and top-down run — 2026-09-12
 
 The current level art is `Assets/Textures/Backgrounds/pasture_grass.png`,
 `Assets/Textures/Environment/wood_fence_panel.png`, and
 `Assets/Textures/Characters/sheep_topdown_run.png`. All are imported resources,
-created with the built-in imagegen tool from saved requests:
+created with the built-in imagegen tool from saved requests (the September 12
+grass is superseded by the section above):
 [pasture prompts](Environment/pasture_assets_prompts.md) and
 [sheep prompt/import instructions](Characters/sheep_topdown_run_prompt.md).
 The original standing atlas is preserved as an input and fallback.
@@ -30,36 +61,41 @@ movement, more frames and faster running. The current eight key poses come from
 of the accepted source. The [exact edit prompt](Characters/sheep_topdown_run_lively_prompt.md)
 and both older sources are retained.
 
-The latest 2026-09-18 revision replaces the earlier 48-pose density-only update.
-It uses the same eight source drawings, with eleven motion-compensated
-in-betweens per interval, including key 8 → 1, for 96 poses. No new imagegen art
-is used. Motion-aligned colour samples now blend continuously instead of
-switching source at each interval's midpoint; soft-alpha endpoint handling
-avoids alternating between different edge treatments at the painted keys.
-After interpolation, the rear follows one periodic side-to-side curve: its
-phase comes from the source gait, with an amplitude of up to 14 pixels
-constrained by the existing traffic envelope. The baker fits one safe amplitude
-and centre for the entire cycle, not per-frame clipping. A rear-only horizontal
-correction eases in from 62.5% to 82% of cell height;
-the front half is unchanged by this correction. This replaces the old per-key
-displacement gain rather than stacking another sway on top of it. Standing
-poses remain exact, as do the painted keys' front halves; entire running
-frames are intentionally no longer pixel-identical to the 48-pose atlas.
-All coats use the same white-coat optical flow, silhouette and rear correction;
-there is no independent timing or unaligned whole-animal alpha dissolve.
-The importer aligns frames by head/ears, not the moving rear silhouette; runtime
-does not add whole-body rotation, position sway or scale pulses. Only actual
-route turns rotate the Sprite. Gait phase still follows distance and slows with
-yielding. Speed remains 5.5 cells/s and stride remains 1.6 cells: extra frames
-do not slow the gait, and the renderer selects the pose for actual distance
-rather than trying to display every atlas cell. The importer emits an HTML
-preview at actual cadence and a labelled quarter-speed view, plus cyclic
-contour progression and rear-motion metrics. Its checks retain the existing
-traffic envelope and shared silhouettes between coats; visual acceptance still
-requires the user's in-editor review.
-Menu artwork and motion are untouched by this correction.
+The latest [2026-09-21 grounded-trot revision](Characters/sheep_topdown_grounded_trot.md)
+replaces the 96-pose optical-flow/rear-correction motion, which the user rejected
+for sideways hind feet, sliding and an unclear pelvic movement. It keeps 96
+poses and the same artwork: the first neutral painted pose is separated offline
+into its four short grey hooves and remaining body. Recombining those layers
+restores the original pixels exactly. The other seven drawings are retained
+for comparison, not interpolated into the new running cycle. No new imagegen
+source is used.
 
-The lawn covers the viewport without changing aspect ratio; fence sections
+Hooves now follow four fixed left/right lanes and alternating diagonal pairs.
+Their fore-aft tracks are exported from the shared C++ motion model: during
+contact, backward hoof motion compensates for forward travel; a smooth return
+curve brings the lifted foot forward. Wool and tail carry a separate periodic
+weight shift, two compression/rebound beats and delayed tail motion, without
+dragging the feet sideways. This layering exists only in the offline baker:
+Panda still draws one ordinary whole-animal Sprite per sheep, with no additional
+leg entities, runtime deformation or meshes. Only actual route turns rotate
+the Sprite.
+
+Standing poses, coats, the traffic envelope, speed (5.5 cells/s) and stride
+(1.6 cells) are unchanged. Runtime selects the atlas pose from actual travelled
+distance, so yielding slows both movement and feet, rather than playing every
+cell on a separate timer. The build checks the contact model, loop/contact
+continuity, head registration, shared coat silhouettes, distinct frames and
+padding. The preview includes actual-speed and quarter-speed playback over
+scrolling ground to expose sliding. These checks are not visual acceptance;
+only the user launches the editor and reviews the final movement.
+Menu artwork and motion remain untouched.
+
+The [September 25 head/neck repair](Characters/sheep_topdown_head_join.md)
+reuses each coat's standing head throughout the run cycle. A premultiplied
+shoulder join avoids the visible change of face and collar drawing at startup;
+all gait pixels below row 176, standing poses and runtime motion remain unchanged.
+
+The single opaque ground covers the viewport at a sheep-relative scale; fence sections
 retain their approximately 7:1 proportions and overlap their end posts by 6%.
 Fence Sprites, background and a hidden animation-template Sprite are authored
 in `game.world`; scripts position them but do not generate textures/materials.

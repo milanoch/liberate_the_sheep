@@ -1,13 +1,14 @@
 #!/usr/bin/env swift
-// Reproducible, lossless transparent-margin packaging for the generated fence.
-// Does not repaint, resize, recolor, or change the generated alpha channel.
+// Reproducible transparent-margin packaging for the generated fence.
+// Default: lossless crop. Optional canvas: uniform aspect-fit with transparent
+// padding, never nonuniformly stretch the artwork or replace its alpha.
 import Foundation
 import CoreGraphics
 import ImageIO
 import UniformTypeIdentifiers
 
-guard CommandLine.arguments.count == 3 else {
-    fatalError("Usage: swift prepare_pasture_assets.swift FENCE_SOURCE.png FENCE_OUTPUT.png")
+guard CommandLine.arguments.count == 3 || CommandLine.arguments.count == 5 else {
+    fatalError("Usage: swift prepare_pasture_assets.swift FENCE_SOURCE.png FENCE_OUTPUT.png [CANVAS_WIDTH CANVAS_HEIGHT]")
 }
 let input = URL(fileURLWithPath: CommandLine.arguments[1])
 let output = URL(fileURLWithPath: CommandLine.arguments[2])
@@ -42,12 +43,40 @@ let x = max(0, left - padding)
 let y = max(0, top - padding)
 let cropWidth = min(width - 1, right + padding) - x + 1
 let cropHeight = min(height - 1, bottom + padding) - y + 1
-guard let crop = image.cropping(to: CGRect(x: x, y: y, width: cropWidth, height: cropHeight)),
-      let destination = CGImageDestinationCreateWithURL(output as CFURL,
-          UTType.png.identifier as CFString, 1, nil) else {
+guard let crop = image.cropping(to: CGRect(x: x, y: y, width: cropWidth, height: cropHeight)) else {
     fatalError("Cannot create cropped fence")
 }
-CGImageDestinationAddImage(destination, crop, nil)
+var packed = crop
+if CommandLine.arguments.count == 5 {
+    guard let canvasWidth = Int(CommandLine.arguments[3]),
+          let canvasHeight = Int(CommandLine.arguments[4]),
+          canvasWidth > 0, canvasHeight > 0,
+          canvasWidth <= 8192, canvasHeight <= 8192,
+          let context = CGContext(data: nil, width: canvasWidth, height: canvasHeight,
+              bitsPerComponent: 8, bytesPerRow: canvasWidth * 4,
+              space: CGColorSpace(name: CGColorSpace.sRGB)!,
+              bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else {
+        fatalError("Invalid canvas dimensions or cannot allocate transparent canvas")
+    }
+    let scale = min(CGFloat(canvasWidth) / CGFloat(cropWidth),
+                    CGFloat(canvasHeight) / CGFloat(cropHeight))
+    let drawWidth = CGFloat(cropWidth) * scale
+    let drawHeight = CGFloat(cropHeight) * scale
+    context.clear(CGRect(x: 0, y: 0, width: canvasWidth, height: canvasHeight))
+    context.interpolationQuality = .high
+    context.draw(crop, in: CGRect(x: (CGFloat(canvasWidth) - drawWidth) * 0.5,
+                                 y: (CGFloat(canvasHeight) - drawHeight) * 0.5,
+                                 width: drawWidth, height: drawHeight))
+    guard let fitted = context.makeImage() else { fatalError("Cannot create fitted fence") }
+    packed = fitted
+    print("Uniform aspect-fit scale \(scale), transparent canvas \(canvasWidth)×\(canvasHeight)")
+}
+guard let destination = CGImageDestinationCreateWithURL(output as CFURL,
+          UTType.png.identifier as CFString, 1, nil) else {
+    fatalError("Cannot create fence PNG destination")
+}
+CGImageDestinationAddImage(destination, packed, nil)
 guard CGImageDestinationFinalize(destination) else { fatalError("Cannot write fence PNG") }
 print("Fence source \(width)×\(height), alpha>8 bounds \(left),\(top)..\(right),\(bottom)")
-print("Output \(cropWidth)×\(cropHeight); visible bounds \(left-x),\(top-y)..\(right-x),\(bottom-y)")
+print("Crop \(cropWidth)×\(cropHeight); crop visible bounds \(left-x),\(top-y)..\(right-x),\(bottom-y)")
+print("Output \(packed.width)×\(packed.height)")
