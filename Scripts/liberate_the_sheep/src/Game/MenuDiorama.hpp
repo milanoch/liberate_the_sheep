@@ -2,7 +2,9 @@
 
 #include <Bamboo/Bamboo.hpp>
 
+#include <cstddef>
 #include <cstdint>
+#include <random>
 #include <vector>
 
 namespace LiberateTheSheep::Game {
@@ -21,8 +23,9 @@ private:
         float x{};
         float groundY{};
         float depth{};
-        float scheduleTime{};
+        float routeTime{};
         float direction{1.f};
+        bool active{};
         int coat{};
         int frame{-1};
         Bamboo::Vec3 baseScale{1.f, 1.f, 1.f};
@@ -62,12 +65,15 @@ private:
     float obstacleDepth_{};
     float obstacleTopY_{};
     float obstacleHalfWidth_{0.75f};
-    float runnerCycleDuration_{13.2f};
+    std::mt19937 random_;
+    float spawnDelay_{};
     float elapsed_{};
 
     void refreshLayout();
-    void refreshRunnerSchedule();
-    void updateScheduledRunnerPosition(Runner &runner) const;
+    void updateRunners(float step);
+    [[nodiscard]] float runnerOffscreenDistance(const Runner &runner) const;
+    void parkRunner(Runner &runner) const;
+    void updateRunnerPosition(Runner &runner) const;
     void applyRunnerTransform(Runner &runner) const;
     void applyCloudTransform(Cloud &cloud) const;
     void applySunTransform();

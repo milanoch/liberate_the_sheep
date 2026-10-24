@@ -21,7 +21,7 @@ namespace {
         {"Нажимай на овечку, только когда путь перед ней свободен.",
          "Tap a sheep only when the way ahead is clear."},
 
-        {"ВЫБЕРИ ПОЛЕ", "CHOOSE A FIELD"},
+        {"УРОВНИ", "LEVELS"},
         {"Три размера поля, девять головоломок.",
          "Three field sizes, nine deterministic puzzles."},
         {"УРОВЕНЬ", "LEVEL"},
@@ -63,6 +63,10 @@ namespace {
          "Try the same field again and look for a clear lane first."},
         {"СЛЕДУЮЩИЙ УРОВЕНЬ", "NEXT LEVEL"},
         {"ПЕРЕИГРАТЬ", "REPLAY"},
+
+        {"БЕССМЕРТНЫЙ РЕЖИМ", "IMMORTAL MODE"},
+        {"Ошибки не отнимают жизни. Счётчик сердец скрыт.",
+         "Unlimited mistakes. The heart counter is hidden."},
     }};
 
     static_assert(kTranslations.size() == static_cast<std::size_t>(TextKey::Count));

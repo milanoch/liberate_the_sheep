@@ -60,6 +60,10 @@ PandaUI::Color cardSoft() {
     return PandaUI::Color(0x27372FD9);
 }
 
+PandaUI::Color menuCard() {
+    return PandaUI::Color(.12f, .12f, .12f, .68f);
+}
+
 PandaUI::Color scrim() {
     return PandaUI::Color(0x08100BCC);
 }

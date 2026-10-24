@@ -62,6 +62,9 @@ enum class TextKey : std::size_t {
     NextLevel,
     Replay,
 
+    ImmortalMode,
+    ImmortalModeDescription,
+
     Count,
 };
 

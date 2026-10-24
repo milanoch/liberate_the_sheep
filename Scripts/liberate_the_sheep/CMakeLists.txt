@@ -52,6 +52,14 @@ target_include_directories(liberate_the_sheep_export_trot PRIVATE ${PROJECT_SOUR
 
 include(CTest)
 if (BUILD_TESTING)
+    add_executable(liberate_the_sheep_level_hearts_tests tests/LevelHeartsSmoke.cpp)
+    target_include_directories(liberate_the_sheep_level_hearts_tests PRIVATE ${PROJECT_SOURCE_DIR}/src)
+    add_test(NAME liberate_the_sheep_level_hearts COMMAND liberate_the_sheep_level_hearts_tests)
+
+    add_executable(liberate_the_sheep_settings_format_tests tests/SettingsFormatSmoke.cpp)
+    target_include_directories(liberate_the_sheep_settings_format_tests PRIVATE ${PROJECT_SOURCE_DIR}/src)
+    add_test(NAME liberate_the_sheep_settings_format COMMAND liberate_the_sheep_settings_format_tests)
+
     # Produces static layout data for the offline source-art preview, not a game.
     add_executable(liberate_the_sheep_export_pasture
             tools/ExportPasturePreview.cpp

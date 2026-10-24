@@ -18,6 +18,7 @@ namespace Colors {
 [[nodiscard]] PandaUI::Color danger();
 [[nodiscard]] PandaUI::Color card();
 [[nodiscard]] PandaUI::Color cardSoft();
+[[nodiscard]] PandaUI::Color menuCard();
 [[nodiscard]] PandaUI::Color scrim();
 
 } // namespace Colors

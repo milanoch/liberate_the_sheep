@@ -1,5 +1,12 @@
 # One opaque pasture surface — 2026-09-23–24
 
+Update 2026-10-01: dense grass is now cartoon artwork with nonperiodic patch
+sampling; the approved soil and wear calculation remain unchanged. See
+`pasture_cartoon_grass.md` for the current source and packing command. The
+photographic source, periodic grass sampler, checks and commands below describe
+the historical September version. Do not run those tests/previews without an
+explicit user request (standing instruction since 2026-09-30).
+
 The user rejected the September 22–23 Sprite tiles and transparent decals:
 visible seams, dull grass, and black puddle-shaped outlines in the actual
 Panda viewport. The earlier CoreGraphics preview did not reproduce the

@@ -94,6 +94,25 @@ struct SourceAtlas {
     std::span<const std::uint8_t> bytes;
     int width{};
     int tileSide{};
+    Color grassMean;
+
+    SourceAtlas(std::span<const std::uint8_t> pixels, int atlasWidth, int side)
+        : bytes(pixels), width(atlasWidth), tileSide(side) {
+        // Only cell 0 belongs to the grass palette. Calculate its mean once
+        // per composition, never per output pixel or from the soil cell.
+        for (int y = 0; y < tileSide; ++y) {
+            for (int x = 0; x < tileSide; ++x) {
+                const auto pixel = (static_cast<std::size_t>(y) * width + x) * 4;
+                for (std::size_t channel = 0; channel < grassMean.channels.size(); ++channel) {
+                    grassMean.channels[channel] += bytes[pixel + channel];
+                }
+            }
+        }
+        const double count = static_cast<double>(tileSide) * tileSide;
+        for (double &channel : grassMean.channels) {
+            channel /= count;
+        }
+    }
 
     [[nodiscard]] Color sample(int cell, double u, double v) const noexcept {
         const double px = u * (tileSide - 1);
@@ -112,6 +131,49 @@ struct SourceAtlas {
             color.channels[channel] = mix(
                 mix(bytes[p[0] + channel], bytes[p[1] + channel], px - x),
                 mix(bytes[p[2] + channel], bytes[p[3] + channel], px - x), py - y);
+        }
+        return color;
+    }
+
+    // Overlapping grass patches use stable random source offsets at absolute
+    // grid vertices. Smooth weights hide patch edges without a repeating tile;
+    // each patch retains the authored six-cell scale and never wraps or mirrors.
+    [[nodiscard]] Color grass(double x, double y, std::uint64_t seed) const noexcept {
+        constexpr double patchSpan = kPastureTexturePeriodCells * 0.25;
+        const double gx = x / patchSpan;
+        const double gy = -y / patchSpan;
+        const double floorX = std::floor(gx);
+        const double floorY = std::floor(gy);
+        const auto ix = static_cast<std::int64_t>(floorX);
+        const auto iy = static_cast<std::int64_t>(floorY);
+        const double fx = gx - floorX;
+        const double fy = gy - floorY;
+        const auto patch = [&](int cornerX, int cornerY) {
+            const double offsetU = 0.5 * noiseCorner(ix + cornerX, iy + cornerY,
+                                                    seed ^ 0x243f6a8885a308d3ULL);
+            const double offsetV = 0.5 * noiseCorner(ix + cornerX, iy + cornerY,
+                                                    seed ^ 0x13198a2e03707344ULL);
+            // A patch covers two grid spans, using half the source in each axis.
+            return sample(0, offsetU + 0.25 + 0.25 * (fx - cornerX),
+                             offsetV + 0.25 + 0.25 * (fy - cornerY));
+        };
+        const std::array<Color, 4> samples{patch(0, 0), patch(1, 0),
+                                           patch(0, 1), patch(1, 1)};
+        const double wx = smooth(fx);
+        const double wy = smooth(fy);
+        // Averaging unrelated blade shapes washes out their contrast. Restore
+        // most of that contrast around the source palette mean, with a smooth
+        // gain of 1..1.7. Keep the existing weights/UVs so joins stay continuous.
+        const double squaredWeights = ((1.0 - wx) * (1.0 - wx) + wx * wx) *
+                                      ((1.0 - wy) * (1.0 - wy) + wy * wy);
+        const double detailGain = 1.0 + 0.7 * (1.0 / std::sqrt(squaredWeights) - 1.0);
+        Color color;
+        for (std::size_t channel = 0; channel < color.channels.size(); ++channel) {
+            const double blended = mix(
+                mix(samples[0].channels[channel], samples[1].channels[channel], wx),
+                mix(samples[2].channels[channel], samples[3].channels[channel], wx), wy);
+            color.channels[channel] = std::clamp(grassMean.channels[channel] +
+                (blended - grassMean.channels[channel]) * detailGain, 0.0, 255.0);
         }
         return color;
     }
@@ -198,7 +260,10 @@ PastureSurface composePastureSurface(std::span<const std::uint8_t> atlasRgba,
         return output;
     }
     const double pixelCount = static_cast<double>(layout.viewportWidth) * layout.viewportHeight;
-    const double scale = std::min({1.0,
+    // Layout dimensions are logical UI points. Up to two texels per point
+    // retain small blades on Retina instead of enlarging a one-texel image.
+    // Keep the existing dimension/pixel caps and the same world-space scale.
+    const double scale = std::min({2.0,
         static_cast<double>(kPastureSurfaceMaxDimension) / layout.viewportWidth,
         static_cast<double>(kPastureSurfaceMaxDimension) / layout.viewportHeight,
         std::sqrt(static_cast<double>(kPastureSurfaceMaxPixels) / pixelCount)});
@@ -215,9 +280,16 @@ PastureSurface composePastureSurface(std::span<const std::uint8_t> atlasRgba,
             const double localDensity = density.at(cellX, cellY);
             const double variation = localDensity > 0.0 ?
                 0.90 + 0.20 * broadNoise(cellX, cellY, seed) : 1.0;
+            const double wearDensity = localDensity * variation;
+            const double originalWear = smooth((wearDensity - 0.15) / (0.85 - 0.15));
+            // Let a little earth show through sparse grass before the old
+            // cutoff. Feather only the outer falloff: the approved inner mask
+            // is exactly unchanged at density >= 0.60, including its soil cap.
+            const double outerWear = smooth(wearDensity / 0.85);
+            const double edgeFeather = 0.65 * (1.0 - smooth(wearDensity / 0.60));
             const double soilAmount = kPastureMaximumSoilBlend *
-                smooth((localDensity * variation - 0.15) / (0.85 - 0.15));
-            const Color grass = source.periodic(0, cellX, cellY);
+                mix(originalWear, outerWear, edgeFeather);
+            const Color grass = source.grass(cellX, cellY, seed);
             const Color earth = soilAmount > 0.0 ? source.periodic(1, cellX, cellY) : grass;
             const auto pixel = (static_cast<std::size_t>(y) * output.width + x) * 4;
             for (std::size_t channel = 0; channel < 3; ++channel) {

@@ -42,8 +42,8 @@ namespace {
 
 } // namespace
 
-GameplayRootView::GameplayRootView(Callbacks callbacks, GameplayText text)
-    : text_(std::move(text)) {
+GameplayRootView::GameplayRootView(Callbacks callbacks, GameplayText text, bool showHearts)
+    : text_(std::move(text)), showHearts_(showHearts) {
     setBackgroundColor(Colors::transparent());
     layout().setWidth(PandaUI::Length::percent(100.f));
     layout().setHeight(PandaUI::Length::percent(100.f));
@@ -109,10 +109,11 @@ void GameplayRootView::showVictory(int heartsRemaining, bool hasNextLevel) {
         resultTitleLabel_->setText(text_.victoryTitle);
     }
     if (resultMessageLabel_) {
-        resultMessageLabel_->setText(
-            text_.victoryMessage + "\n" +
-            std::to_string(std::clamp(heartsRemaining, 0, 3)) + "/3 " + text_.heartsStat
-        );
+        std::string message = text_.victoryMessage;
+        if (showHearts_) {
+            message += "\n" + std::to_string(std::clamp(heartsRemaining, 0, 3)) + "/3 " + text_.heartsStat;
+        }
+        resultMessageLabel_->setText(message);
     }
     if (nextButton_) {
         nextButton_->setHidden(!hasNextLevel);
@@ -195,19 +196,16 @@ std::shared_ptr<PandaUI::Panel> GameplayRootView::makeHud(Callbacks &callbacks) 
     levelLabel_ = makeLabel(
         "1", 20.f, PandaUI::FontWeight::Bold, Colors::cream(), 1, PandaUI::TextAlignment::Center
     );
-    heartsLabel_ = makeLabel(
-        "3 / 3",
-        20.f,
-        PandaUI::FontWeight::Bold,
-        Colors::cream(),
-        1,
-        PandaUI::TextAlignment::Center
-    );
     sheepLabel_ = makeLabel(
         "0", 20.f, PandaUI::FontWeight::Bold, Colors::cream(), 1, PandaUI::TextAlignment::Center
     );
     stats->addSubview(makeStat(text_.levelStat, levelLabel_));
-    stats->addSubview(makeStat(text_.heartsStat, heartsLabel_));
+    if (showHearts_) {
+        heartsLabel_ = makeLabel(
+            "3 / 3", 20.f, PandaUI::FontWeight::Bold,
+            Colors::cream(), 1, PandaUI::TextAlignment::Center);
+        stats->addSubview(makeStat(text_.heartsStat, heartsLabel_));
+    }
     stats->addSubview(makeStat(text_.sheepLeftStat, sheepLabel_));
     hudCard->addSubview(stats);
 

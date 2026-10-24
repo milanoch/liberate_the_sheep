@@ -8,6 +8,8 @@
 
 namespace LiberateTheSheep::UI {
 
+class SheepToggle;
+
 enum class MenuLanguage {
     Russian,
     English,
@@ -22,6 +24,8 @@ struct SettingsText {
     std::string englishButton = "EN";
     std::string musicTitle = "MUSIC";
     std::string musicDescription = "The setting is ready for audio support.";
+    std::string immortalModeTitle = "IMMORTAL MODE";
+    std::string immortalModeDescription = "Unlimited mistakes. The heart counter is hidden.";
     std::string resetTitle = "RESET PROGRESS";
     std::string resetDescription = "Erase unlocked levels and collected hearts.";
     std::string resetButton = "RESET PROGRESS";
@@ -35,19 +39,23 @@ public:
     using Action = std::function<void()>;
     using LanguageChangedAction = std::function<void(MenuLanguage language)>;
     using MusicChangedAction = std::function<void(bool enabled)>;
+    using ImmortalModeChangedAction = std::function<void(bool enabled)>;
 
     SettingsView(
         SettingsText text,
         MenuLanguage language,
         bool musicEnabled,
+        bool immortalModeEnabled,
         LanguageChangedAction languageChanged,
         MusicChangedAction musicChanged,
+        ImmortalModeChangedAction immortalModeChanged,
         Action resetProgress,
         Action back
     );
 
     void setLanguage(MenuLanguage language);
     void setMusicEnabled(bool enabled);
+    void setImmortalModeEnabled(bool enabled);
 
 private:
     void handleReset();
@@ -58,7 +66,8 @@ private:
     Action resetProgress_;
     std::shared_ptr<PandaUI::Button> russianButton_;
     std::shared_ptr<PandaUI::Button> englishButton_;
-    std::shared_ptr<PandaUI::Toggle> musicToggle_;
+    std::shared_ptr<SheepToggle> musicToggle_;
+    std::shared_ptr<SheepToggle> immortalModeToggle_;
     std::shared_ptr<PandaUI::Button> resetButton_;
     std::shared_ptr<PandaUI::Label> resetHint_;
 };

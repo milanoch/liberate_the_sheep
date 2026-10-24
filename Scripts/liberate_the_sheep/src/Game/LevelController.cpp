@@ -76,6 +76,7 @@ namespace {
 void LevelController::start() {
     (void)progress_.load();
     (void)settings_.load();
+    hearts_.reset(settings_.immortalModeEnabled());
 
     const int requestedLevel = SessionState::consumeRequestedLevel();
     if (requestedLevel == SessionState::kNoLevelRequested && menuWorld.isValid()) {
@@ -157,7 +158,8 @@ void LevelController::createUI() {
     text.replayButton = localizedString(TextKey::Replay, language);
 
     rootView_ =
-        std::make_shared<UI::GameplayRootView>(std::move(callbacks), std::move(text));
+        std::make_shared<UI::GameplayRootView>(
+            std::move(callbacks), std::move(text), hearts_.counterVisible());
     window_.setRootView(rootView_);
 }
 
@@ -190,7 +192,7 @@ void LevelController::loadLevel(int levelNumber) {
     board_.reset();
     clearHint();
     currentLevel_ = clampedLevel;
-    hearts_ = ProgressStore::kMaximumHearts;
+    hearts_.reset(settings_.immortalModeEnabled());
     phase_ = Phase::Loading;
 
     GenerationResult result = BoardGenerator::generate(definition->generation);
@@ -491,7 +493,7 @@ void LevelController::updateHint(float deltaTime) {
 }
 
 void LevelController::selectCell(Cell cell) {
-    if (phase_ != Phase::Playing || hearts_ <= 0 || !board_) {
+    if (phase_ != Phase::Playing || hearts_.isDepleted() || !board_) {
         return;
     }
 
@@ -525,14 +527,14 @@ void LevelController::beginEscape(SheepId sheepId) {
 }
 
 void LevelController::beginBlocked(SheepId sheepId) {
-    if (findVisual(sheepId) == nullptr || isReacting(sheepId) || hearts_ <= 0) {
+    if (findVisual(sheepId) == nullptr || isReacting(sheepId) || hearts_.isDepleted()) {
         return;
     }
     blockedReactions_.push_back({sheepId, 0.f});
-    hearts_ = std::max(0, hearts_ - 1);
+    hearts_.blockedMove();
     updateHUD();
     // Only defeat locks the whole field; a short reaction locks its own sheep.
-    if (hearts_ == 0 && rootView_) {
+    if (hearts_.isDepleted() && rootView_) {
         rootView_->setBoardInputEnabled(false);
     }
 }
@@ -549,15 +551,15 @@ void LevelController::finishEscape(SheepId escaped) {
     updateHUD();
     // Empty logical cells are not victory yet: wait for every running sheep.
     // Escapes may also finish behind the defeat dialog without changing it.
-    if (phase_ == Phase::Playing && hearts_ > 0 && board_ &&
+    if (phase_ == Phase::Playing && !hearts_.isDepleted() && board_ &&
         board_->empty() && escapeHerd_.empty()) {
         phase_ = Phase::Victory;
-        if (progress_.recordCompletion(currentLevel_, hearts_)) {
+        if (progress_.recordCompletion(currentLevel_, hearts_.remaining())) {
             (void)progress_.save();
         }
         if (rootView_) {
             rootView_->setBoardInputEnabled(false);
-            rootView_->showVictory(hearts_, currentLevel_ < ProgressStore::kLastLevel);
+            rootView_->showVictory(hearts_.remaining(), currentLevel_ < ProgressStore::kLastLevel);
         }
     }
 }
@@ -578,7 +580,7 @@ void LevelController::finishBlocked(SheepId id) {
             Bamboo::SpriteRendererComponentAPI::setColor(visual->entity, visual->baseColor);
         }
     }
-    if (hearts_ <= 0 && phase_ == Phase::Playing) {
+    if (hearts_.isDepleted() && phase_ == Phase::Playing) {
         clearHint();
         phase_ = Phase::Defeat;
         if (rootView_) {
@@ -589,7 +591,7 @@ void LevelController::finishBlocked(SheepId id) {
 }
 
 void LevelController::showHint() {
-    if (phase_ != Phase::Playing || hearts_ <= 0 || !board_) {
+    if (phase_ != Phase::Playing || hearts_.isDepleted() || !board_) {
         return;
     }
 
@@ -642,7 +644,7 @@ void LevelController::returnToMenu() {
 void LevelController::updateHUD() {
     if (rootView_) {
         rootView_->updateHUD(
-            currentLevel_, hearts_, board_ ?
+            currentLevel_, hearts_.remaining(), board_ ?
                 static_cast<int>(board_->sheepCount() + escapeHerd_.size()) : 0
         );
     }

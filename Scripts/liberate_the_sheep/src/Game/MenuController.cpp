@@ -7,6 +7,7 @@
 #include "UI/SettingsView.hpp"
 
 #include <Bamboo/Assets/TextureAPI.hpp>
+#include <Bamboo/Components/SpriteRendererComponentAPI.hpp>
 #include <Bamboo/Logger.hpp>
 #include <Bamboo/UI/TextureAPI.hpp>
 #include <Bamboo/WorldAPI.hpp>
@@ -25,14 +26,30 @@ namespace {
 
     [[nodiscard]] UI::MainMenuText mainMenuText(Language language) {
         UI::MainMenuText result;
-        result.demoBadge = text(TextKey::DemoEyebrow, language);
-        result.title = text(TextKey::GameTitle, language);
-        result.subtitle = text(TextKey::MainMenuDescription, language);
         result.playButton = text(TextKey::Play, language);
-        result.continueButton = text(TextKey::Continue, language);
-        result.levelSelectButton = text(TextKey::SelectLevel, language);
-        result.settingsTooltip = text(TextKey::Settings, language);
-        result.footer = text(TextKey::MainMenuHint, language);
+        return result;
+    }
+
+    PandaUI::TextureHandle menuTexture(Bamboo::TextureHandle source, const char *name) {
+        if (!source.isValid()) {
+            LOG_WARN("MenuController: %s texture is not configured in menu.world", name);
+            return {};
+        }
+        const auto pixels = Bamboo::TextureAPI::readPixelsRGBA8(source);
+        const auto maxDimension = static_cast<uint32_t>(std::numeric_limits<uint16_t>::max());
+        const uint64_t expectedBytes = static_cast<uint64_t>(pixels.width) * pixels.height * 4u;
+        if (!pixels || pixels.width > maxDimension || pixels.height > maxDimension ||
+            expectedBytes != pixels.pixels.size()) {
+            LOG_WARN("MenuController: cannot read %s texture asset %u", name, source.id);
+            return {};
+        }
+        auto result = Bamboo::UI::createTextureRGBA8(
+            pixels.pixels.data(), static_cast<uint16_t>(pixels.width),
+            static_cast<uint16_t>(pixels.height)
+        );
+        if (!result) {
+            LOG_WARN("MenuController: cannot create %s UI texture", name);
+        }
         return result;
     }
 
@@ -41,8 +58,8 @@ namespace {
 
         UI::SettingsText result;
         result.title = text(TextKey::SettingsTitle, language);
-        result.subtitle = russian ? "Язык, музыка и прогресс игры."
-                                  : "Language, music and game progress.";
+        result.subtitle = russian ? "Язык, музыка и режим игры."
+                                  : "Language, music and game mode.";
         result.languageTitle = text(TextKey::Language, language);
         result.languageDescription = russian ? "Язык меню и игры"
                                              : "Menu and game language";
@@ -54,6 +71,8 @@ namespace {
         result.musicDescription =
             russian ? "Настройка сохранится для будущей поддержки звука."
                     : "This preference is saved for future audio support.";
+        result.immortalModeTitle = text(TextKey::ImmortalMode, language);
+        result.immortalModeDescription = text(TextKey::ImmortalModeDescription, language);
         result.resetTitle = text(TextKey::ResetProgress, language);
         result.resetDescription = text(TextKey::ResetProgressDescription, language);
         result.resetButton = text(TextKey::ResetProgress, language);
@@ -96,36 +115,31 @@ void MenuController::start() {
         return;
     }
 
-    if (settingsGearTexture.isValid()) {
-        const Bamboo::TextureAPI::TexturePixelsRGBA8 pixels =
-            Bamboo::TextureAPI::readPixelsRGBA8(settingsGearTexture);
-        const auto maxDimension =
-            static_cast<uint32_t>(std::numeric_limits<uint16_t>::max());
-        const uint64_t expectedBytes = static_cast<uint64_t>(pixels.width) *
-                                       static_cast<uint64_t>(pixels.height) * 4u;
-        if (!pixels) {
-            LOG_WARN(
-                "MenuController: failed to read settings gear texture asset %u",
-                settingsGearTexture.id
-            );
-        } else if (pixels.width > maxDimension || pixels.height > maxDimension ||
-                   expectedBytes != pixels.pixels.size()) {
-            LOG_WARN(
-                "MenuController: settings gear texture asset %u has unsupported pixel data",
-                settingsGearTexture.id
-            );
-        } else {
-            settingsGearUiTexture_ = Bamboo::UI::createTextureRGBA8(
-                pixels.pixels.data(),
-                static_cast<uint16_t>(pixels.width),
-                static_cast<uint16_t>(pixels.height)
-            );
-            if (!settingsGearUiTexture_) {
-                LOG_WARN("MenuController: failed to create PandaUI settings gear texture");
-            }
-        }
+    settingsGearUiTexture_ = menuTexture(settingsGearTexture, "settings gear");
+    // The source Sprite lives in the world, so its texture can be changed in
+    // PandaEditor without hard-coding an asset ID or file path in the script.
+    auto playArtwork = Bamboo::WorldAPI::findByTag("MenuPlayButtonArt");
+    if (playArtwork.isValid()) {
+        sheepPlayUiTexture_ = menuTexture(
+            Bamboo::SpriteRendererComponentAPI::getTexture(playArtwork), "sheep play button"
+        );
+    } else {
+        LOG_WARN("MenuController: MenuPlayButtonArt is missing from menu.world");
     }
 
+    leavingMenu_ = false;
+    currentPage_ = Page::Main;
+    settingsReturnPage_ = Page::Main;
+    rootView_ = std::make_shared<UI::MenuShellView>(settingsGearUiTexture_, [this]() {
+        defer([this]() {
+            if (currentPage_ == Page::Settings) {
+                closeSettings();
+            } else {
+                showSettings();
+            }
+        });
+    });
+    window_.setRootView(rootView_);
     diorama_.start();
     showMainMenu();
 }
@@ -135,6 +149,7 @@ void MenuController::update(float deltaTime) {
 }
 
 void MenuController::shutdown() {
+    leavingMenu_ = true;
     diorama_.setRunning(false);
     if (window_.isValid() && rootView_ &&
         window_.context().getRootView() == rootView_) {
@@ -145,60 +160,72 @@ void MenuController::shutdown() {
         Bamboo::UI::destroyTexture(settingsGearUiTexture_);
         settingsGearUiTexture_ = {};
     }
+    if (sheepPlayUiTexture_) {
+        Bamboo::UI::destroyTexture(sheepPlayUiTexture_);
+        sheepPlayUiTexture_ = {};
+    }
+}
+
+bool MenuController::canNavigate() const {
+    return window_.isValid() && rootView_ && !leavingMenu_ && !rootView_->isTransitioning();
 }
 
 void MenuController::showMainMenu() {
-    if (!window_.isValid()) {
+    if (!canNavigate()) {
         return;
     }
 
     diorama_.setRunning(true);
-    rootView_ = std::make_shared<UI::MainMenuView>(
+    auto page = std::make_shared<UI::MainMenuView>(
         mainMenuText(settings_.language()),
         [this]() {
-            loadLevel(progress_.progress().highestUnlocked);
-        },
-        [this]() {
-            diorama_.setRunning(false);
             defer([this]() { showLevelSelect(); });
         },
-        [this]() {
-            diorama_.setRunning(false);
-            defer([this]() { showSettings(); });
-        },
-        true,
-        settingsGearUiTexture_
+        sheepPlayUiTexture_
     );
-    window_.setRootView(rootView_);
+    if (rootView_->showPage(std::move(page))) {
+        currentPage_ = Page::Main;
+        rootView_->setSettingsTooltip(text(TextKey::Settings, settings_.language()));
+    }
 }
 
 void MenuController::showLevelSelect() {
-    if (!window_.isValid()) {
+    if (!canNavigate()) {
         return;
     }
 
-    diorama_.setRunning(false);
-    rootView_ = std::make_shared<UI::LevelSelectView>(
+    // Menu pages share the live scene; navigating between them must not
+    // freeze the sheep, clouds, sun or the individual spawn timers.
+    diorama_.setRunning(true);
+    auto page = std::make_shared<UI::LevelSelectView>(
         levelSelectText(settings_.language()),
         progress_.progress().highestUnlocked,
         progress_.progress().bestHearts,
         [this](int levelNumber) { loadLevel(levelNumber); },
         [this]() { defer([this]() { showMainMenu(); }); }
     );
-    window_.setRootView(rootView_);
+    if (rootView_->showPage(std::move(page))) {
+        currentPage_ = Page::Levels;
+        rootView_->setSettingsTooltip(text(TextKey::Settings, settings_.language()));
+    }
 }
 
 void MenuController::showSettings() {
-    if (!window_.isValid()) {
+    if (!canNavigate()) {
         return;
     }
 
-    diorama_.setRunning(false);
+    diorama_.setRunning(true);
+    const bool updatingLanguage = currentPage_ == Page::Settings;
+    if (!updatingLanguage) {
+        settingsReturnPage_ = currentPage_;
+    }
     const Language language = settings_.language();
-    rootView_ = std::make_shared<UI::SettingsView>(
+    auto page = std::make_shared<UI::SettingsView>(
         settingsText(language),
         menuLanguage(language),
         settings_.musicEnabled(),
+        settings_.immortalModeEnabled(),
         [this](UI::MenuLanguage selectedLanguage) {
             const bool changed = settings_.setLanguage(gameLanguage(selectedLanguage));
             if (changed && !settings_.save()) {
@@ -213,18 +240,38 @@ void MenuController::showSettings() {
                 LOG_WARN("MenuController: failed to save music setting");
             }
         },
+        [this](bool enabled) {
+            if (settings_.setImmortalModeEnabled(enabled) && !settings_.save()) {
+                LOG_WARN("MenuController: failed to save immortal mode setting");
+            }
+        },
         [this]() {
             progress_.reset();
             if (!progress_.save()) {
                 LOG_WARN("MenuController: failed to save reset progress");
             }
         },
-        [this]() { defer([this]() { showMainMenu(); }); }
+        [this]() { defer([this]() { closeSettings(); }); }
     );
-    window_.setRootView(rootView_);
+    // A language change updates the text without replaying the navigation fade.
+    if (rootView_->showPage(std::move(page), !updatingLanguage)) {
+        currentPage_ = Page::Settings;
+        rootView_->setSettingsTooltip(text(TextKey::Settings, language));
+    }
+}
+
+void MenuController::closeSettings() {
+    if (settingsReturnPage_ == Page::Levels) {
+        showLevelSelect();
+    } else {
+        showMainMenu();
+    }
 }
 
 void MenuController::loadLevel(int levelNumber) {
+    if (!canNavigate()) {
+        return;
+    }
     if (!progress_.isUnlocked(levelNumber)) {
         LOG_WARN("MenuController: level %d is locked", levelNumber);
         return;
@@ -234,6 +281,8 @@ void MenuController::loadLevel(int levelNumber) {
         return;
     }
 
+    leavingMenu_ = true;
+    rootView_->setUserInteractionEnabled(false);
     diorama_.setRunning(false);
     SessionState::requestLevel(levelNumber);
     const Bamboo::WorldHandle targetWorld = gameWorld;

@@ -667,6 +667,32 @@
             }
         },
         {
+            "id": 885618776,
+            "tagComponent": {
+                "tag": "MenuPlayButtonArt"
+            },
+            "relationshipComponent": {
+                "parent": 0,
+                "children": []
+            },
+            "transformComponent": {
+                "position": { "x": 10000.0, "y": 10000.0, "z": 0.0 },
+                "rotation": { "x": 0.0, "y": 0.0, "z": 0.0, "w": 1.0 },
+                "scale": { "x": 4.5, "y": 3.0, "z": 1.0 }
+            },
+            "spriteRendererComponent": {
+                "color": { "x": 1.0, "y": 1.0, "z": 1.0, "w": 1.0 },
+                "cols": 1,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 3175671180
+            },
+            "scriptListComponent": {
+                "scripts": []
+            }
+        },
+        {
             "id": 636655708,
             "tagComponent": {
                 "tag": "MenuController"

@@ -9,7 +9,9 @@
 namespace LiberateTheSheep::UI {
 
 struct LevelSelectText {
-    std::string title = "CHOOSE A FIELD";
+    std::string title = "LEVELS";
+    // Retained for existing localized callers; tiles now show numbers and
+    // native check/lock badges, without subtitles or heart counters.
     std::string subtitle = "Three field sizes, nine deterministic puzzles.";
     std::string levelPrefix = "LEVEL";
     std::string locked = "LOCKED";

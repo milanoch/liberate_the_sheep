@@ -3,6 +3,7 @@
 #include "Game/BoardLayout.hpp"
 #include "Game/BoardModel.hpp"
 #include "Game/EscapeHerd.hpp"
+#include "Game/LevelHearts.hpp"
 #include "Game/PastureScene.hpp"
 #include "Game/PenEscapePath.hpp"
 #include "Game/ProgressStore.hpp"
@@ -80,7 +81,7 @@ private:
 
     Phase phase_{Phase::Loading};
     int currentLevel_{ProgressStore::kFirstLevel};
-    int hearts_{ProgressStore::kMaximumHearts};
+    LevelHearts hearts_;
     int viewportWidth_{};
     int viewportHeight_{};
     bool startupMenuPending_{};

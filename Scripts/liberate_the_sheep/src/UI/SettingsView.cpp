@@ -1,22 +1,149 @@
 #include "UI/SettingsView.hpp"
 
+#include "UI/SheepToggle.hpp"
 #include "UI/UIStyle.hpp"
 
+#include <algorithm>
+#include <cmath>
 #include <utility>
 
 namespace LiberateTheSheep::UI {
 namespace {
 
+    const PandaUI::Color kText(0xF5F5F5FF);
+    const PandaUI::Color kSecondaryText(0xC7C7C7FF);
+    const PandaUI::Color kDangerText(0xFFAAA5FF);
+
+    // Native ButtonStyle::AccentOutline installs a blue surface and blue text.
+    // Keep the palette local instead of changing the editor's global UI theme.
+    class SettingsButton final : public PandaUI::Button {
+    public:
+        explicit SettingsButton(std::string title, bool destructive = false)
+            : PandaUI::Button(std::move(title)), destructive_(destructive) {
+            layout().setHeight(PandaUI::Length::points(48.f));
+            layout().setMinHeight(PandaUI::Length::points(48.f));
+            layout().setFlexShrink(0.f);
+            setFont(PandaUI::Font(15.f, PandaUI::FontWeight::Bold));
+            surface().setCornerRadius(12.f);
+            surface().setBorderWidth(1.f);
+            surface().setShadowColor(Colors::transparent());
+            refreshAppearance();
+            fill_ = targetFill_;
+            border_ = targetBorder_;
+            text_ = targetText_;
+            animating_ = false;
+            applyAppearance();
+        }
+
+    protected:
+        void controlStateChanged(PandaUI::ControlState, PandaUI::ControlState) override {
+            refreshAppearance();
+        }
+
+        void themeChanged() override {
+            refreshAppearance();
+        }
+
+        void update(double deltaTime) override {
+            if (!animating_ || deltaTime <= 0.0) {
+                return;
+            }
+            const float blend = 1.f - std::exp(
+                -static_cast<float>(std::clamp(deltaTime, 0.0, .1)) / .08f
+            );
+            const auto approach = [blend](PandaUI::Color &value, const PandaUI::Color &target) {
+                const auto channel = [blend](float from, float to) {
+                    const float next = from + (to - from) * blend;
+                    return std::abs(next - to) < .001f ? to : next;
+                };
+                value = PandaUI::Color(
+                    channel(value.r, target.r), channel(value.g, target.g),
+                    channel(value.b, target.b), channel(value.a, target.a)
+                );
+                return value.r != target.r || value.g != target.g ||
+                       value.b != target.b || value.a != target.a;
+            };
+            const bool fillMoving = approach(fill_, targetFill_);
+            const bool borderMoving = approach(border_, targetBorder_);
+            const bool textMoving = approach(text_, targetText_);
+            animating_ = fillMoving || borderMoving || textMoving;
+            applyAppearance();
+        }
+
+    private:
+        void refreshAppearance() {
+            const auto &theme = PandaUI::theme();
+            targetFill_ = PandaUI::Color(0xFFFFFF0F);
+            targetBorder_ = PandaUI::Color(0xFFFFFF24);
+            targetText_ = kText;
+
+            if (isSelected() && !destructive_) {
+                // The same semantic accent as the sheep toggle's on state.
+                targetFill_ = isHighlighted() ? theme.accentPressed
+                              : isHovered() ? theme.accentHover : theme.accent;
+                targetBorder_ = Colors::transparent();
+                targetText_ = theme.onAccent;
+            } else {
+                if (isHighlighted()) {
+                    targetFill_ = PandaUI::Color(0xFFFFFF09);
+                } else if (isHovered()) {
+                    targetFill_ = PandaUI::Color(0xFFFFFF1F);
+                }
+                if (destructive_ && isSelected()) {
+                    // A clearly red confirmation, with white text for contrast.
+                    targetFill_ = PandaUI::Color(isHighlighted() ? 0x9E3037FF
+                                                 : isHovered() ? 0xD44953FF
+                                                               : 0xBF3943FF);
+                    targetBorder_ = PandaUI::Color(0xFFAAA566);
+                    targetText_ = PandaUI::Color(0xFFFFFFFF);
+                }
+            }
+            if (isFocused()) {
+                targetBorder_ = PandaUI::Color(0xFFFFFFA0);
+            }
+            if (!isEnabled()) {
+                targetFill_ = PandaUI::Color(0xFFFFFF08);
+                targetBorder_ = PandaUI::Color(0xFFFFFF14);
+                targetText_ = PandaUI::Color(0x999999FF);
+            }
+            animating_ = true;
+        }
+
+        void applyAppearance() {
+            setBackgroundColor(fill_);
+            surface().setBorderColor(border_);
+            getTitleLabel()->setTextColor(text_);
+            setNeedsDisplay();
+        }
+
+        bool destructive_;
+        bool animating_ = false;
+        PandaUI::Color fill_;
+        PandaUI::Color border_;
+        PandaUI::Color text_;
+        PandaUI::Color targetFill_;
+        PandaUI::Color targetBorder_;
+        PandaUI::Color targetText_;
+    };
+
+    std::shared_ptr<PandaUI::Panel> makeDivider() {
+        auto divider = std::make_shared<PandaUI::Panel>();
+        divider->setBackgroundColor(PandaUI::Color(0xFFFFFF1A));
+        divider->layout().setWidth(PandaUI::Length::percent(100.f));
+        divider->layout().setHeight(PandaUI::Length::points(1.f));
+        divider->layout().setFlexShrink(0.f);
+        return divider;
+    }
+
     std::shared_ptr<PandaUI::Panel> makeSettingSection() {
         auto section = std::make_shared<PandaUI::Panel>();
-        section->setBackgroundColor(Colors::cardSoft());
+        // The outer card provides the shared menu tint. A second translucent
+        // fill here would make the sections darker and less transparent.
+        section->setBackgroundColor(Colors::transparent());
         section->layout().setWidth(PandaUI::Length::percent(100.f));
         section->layout().setFlexDirection(PandaUI::FlexDirection::Column);
-        section->layout().setPadding(PandaUI::Edge::All, 12.f);
-        section->layout().setGap(8.f);
-        section->surface().setCornerRadius(14.f);
-        section->surface().setBorderWidth(1.f);
-        section->surface().setBorderColor(PandaUI::Color(0xFFFFFF1A));
+        section->layout().setGap(10.f);
+        section->layout().setFlexShrink(0.f);
         return section;
     }
 
@@ -29,18 +156,17 @@ namespace {
         header->layout().setGap(3.f);
 
         auto titleLabel = makeLabel(
-            title, 14.f, PandaUI::FontWeight::Bold, Colors::cream(), 1
+            title, 15.f, PandaUI::FontWeight::Bold, kText, 2
         );
-        titleLabel->setLetterSpacing(0.5f);
         titleLabel->layout().setWidth(PandaUI::Length::percent(100.f));
         header->addSubview(titleLabel);
 
         auto descriptionLabel = makeLabel(
             description,
-            12.f,
+            13.f,
             PandaUI::FontWeight::Regular,
-            Colors::mutedCream(),
-            2
+            kSecondaryText,
+            3
         );
         descriptionLabel->layout().setWidth(PandaUI::Length::percent(100.f));
         header->addSubview(descriptionLabel);
@@ -53,8 +179,10 @@ SettingsView::SettingsView(
     SettingsText text,
     MenuLanguage language,
     bool musicEnabled,
+    bool immortalModeEnabled,
     LanguageChangedAction languageChanged,
     MusicChangedAction musicChanged,
+    ImmortalModeChangedAction immortalModeChanged,
     Action resetProgress,
     Action back
 )
@@ -88,7 +216,9 @@ SettingsView::SettingsView(
     scrollContent->layout().setFlexDirection(PandaUI::FlexDirection::Column);
     scrollContent->layout().setAlignItems(PandaUI::Align::Center);
     scrollContent->layout().setPadding(PandaUI::Edge::Horizontal, 14.f);
-    scrollContent->layout().setPadding(PandaUI::Edge::Vertical, 14.f);
+    // Keep the persistent settings gear clear even on compact portrait screens.
+    scrollContent->layout().setPadding(PandaUI::Edge::Top, 84.f);
+    scrollContent->layout().setPadding(PandaUI::Edge::Bottom, 14.f);
 
     // Equal flexible spacers center the card on a tall screen. They collapse to
     // zero on compact portrait screens so every row remains reachable by scroll.
@@ -104,32 +234,43 @@ SettingsView::SettingsView(
     scrollView->addContentSubview(makeFlexibleSpacer());
 
     auto card = makeCard(500.f);
+    card->setBackgroundColor(Colors::menuCard());
+    card->surface().setShadowColor(PandaUI::Color(0x00000028));
+    card->surface().setShadowOffset(PandaUI::Point(0.f, 3.f));
+    card->surface().setShadowRadius(8.f);
     card->layout().setFlexShrink(0.f);
-    card->layout().setPadding(PandaUI::Edge::Horizontal, 16.f);
-    card->layout().setPadding(PandaUI::Edge::Vertical, 18.f);
-    card->layout().setGap(10.f);
+    card->layout().setPadding(PandaUI::Edge::All, 22.f);
+    card->layout().setGap(16.f);
+
+    auto heading = std::make_shared<PandaUI::Panel>();
+    heading->setBackgroundColor(Colors::transparent());
+    heading->layout().setWidth(PandaUI::Length::percent(100.f));
+    heading->layout().setFlexDirection(PandaUI::FlexDirection::Column);
+    heading->layout().setGap(4.f);
+    heading->layout().setFlexShrink(0.f);
 
     auto title = makeLabel(
         text_.title,
         28.f,
         PandaUI::FontWeight::Bold,
-        Colors::cream(),
+        kText,
         1,
         PandaUI::TextAlignment::Center
     );
     title->layout().setWidth(PandaUI::Length::percent(100.f));
-    card->addSubview(title);
+    heading->addSubview(title);
 
     auto subtitle = makeLabel(
         text_.subtitle,
         13.f,
         PandaUI::FontWeight::Regular,
-        Colors::mutedCream(),
+        kSecondaryText,
         2,
         PandaUI::TextAlignment::Center
     );
     subtitle->layout().setWidth(PandaUI::Length::percent(100.f));
-    card->addSubview(subtitle);
+    heading->addSubview(subtitle);
+    card->addSubview(heading);
 
     auto languageSection = makeSettingSection();
     languageSection->addSubview(
@@ -142,7 +283,7 @@ SettingsView::SettingsView(
     languageButtons->layout().setFlexDirection(PandaUI::FlexDirection::Row);
     languageButtons->layout().setGap(10.f);
 
-    russianButton_ = makeButton(text_.russianButton, PandaUI::ButtonStyle::AccentOutline, 46.f);
+    russianButton_ = std::make_shared<SettingsButton>(text_.russianButton);
     russianButton_->layout().setFlexGrow(1.f);
     russianButton_->layout().setFlexBasis(0.f);
     russianButton_->setOnClick(
@@ -155,7 +296,7 @@ SettingsView::SettingsView(
     );
     languageButtons->addSubview(russianButton_);
 
-    englishButton_ = makeButton(text_.englishButton, PandaUI::ButtonStyle::AccentOutline, 46.f);
+    englishButton_ = std::make_shared<SettingsButton>(text_.englishButton);
     englishButton_->layout().setFlexGrow(1.f);
     englishButton_->layout().setFlexBasis(0.f);
     englishButton_->setOnClick(
@@ -169,19 +310,22 @@ SettingsView::SettingsView(
     languageButtons->addSubview(englishButton_);
     languageSection->addSubview(languageButtons);
     card->addSubview(languageSection);
+    card->addSubview(makeDivider());
 
     auto musicSection = makeSettingSection();
     musicSection->layout().setFlexDirection(PandaUI::FlexDirection::Row);
     musicSection->layout().setAlignItems(PandaUI::Align::Center);
+    musicSection->layout().setMinHeight(PandaUI::Length::points(56.f));
     auto musicHeader = makeHeader(text_.musicTitle, text_.musicDescription);
     musicHeader->layout().setFlexGrow(1.f);
     musicHeader->layout().setFlexBasis(0.f);
+    musicHeader->layout().setMinWidth(PandaUI::Length::points(0.f));
     musicSection->addSubview(musicHeader);
 
-    musicToggle_ = std::make_shared<PandaUI::Toggle>();
-    musicToggle_->setOn(musicEnabled);
+    musicToggle_ = std::make_shared<SheepToggle>(musicEnabled);
+    musicToggle_->setTooltip(text_.musicTitle);
     musicToggle_->setOnValueChanged(
-        [action = std::move(musicChanged)](PandaUI::Toggle &toggle) {
+        [action = std::move(musicChanged)](SheepToggle &toggle) {
             if (action) {
                 action(toggle.isOn());
             }
@@ -190,40 +334,59 @@ SettingsView::SettingsView(
     musicSection->addSubview(musicToggle_);
     card->addSubview(musicSection);
 
+    auto immortalModeSection = makeSettingSection();
+    immortalModeSection->layout().setFlexDirection(PandaUI::FlexDirection::Row);
+    immortalModeSection->layout().setAlignItems(PandaUI::Align::Center);
+    immortalModeSection->layout().setMinHeight(PandaUI::Length::points(56.f));
+    auto immortalModeHeader =
+        makeHeader(text_.immortalModeTitle, text_.immortalModeDescription);
+    immortalModeHeader->layout().setFlexGrow(1.f);
+    immortalModeHeader->layout().setFlexBasis(0.f);
+    immortalModeHeader->layout().setMinWidth(PandaUI::Length::points(0.f));
+    immortalModeSection->addSubview(immortalModeHeader);
+
+    immortalModeToggle_ = std::make_shared<SheepToggle>(immortalModeEnabled);
+    immortalModeToggle_->setTooltip(text_.immortalModeTitle);
+    immortalModeToggle_->setOnValueChanged(
+        [action = std::move(immortalModeChanged)](SheepToggle &toggle) {
+            if (action) {
+                action(toggle.isOn());
+            }
+        }
+    );
+    immortalModeSection->addSubview(immortalModeToggle_);
+    card->addSubview(immortalModeSection);
+    card->addSubview(makeDivider());
+
     auto resetSection = makeSettingSection();
-    resetSection->addSubview(makeHeader(text_.resetTitle, text_.resetDescription));
+    auto resetHeader = std::make_shared<PandaUI::Panel>();
+    resetHeader->setBackgroundColor(Colors::transparent());
+    resetHeader->layout().setWidth(PandaUI::Length::percent(100.f));
+    resetHeader->layout().setFlexDirection(PandaUI::FlexDirection::Column);
+    resetHeader->layout().setGap(3.f);
+    auto resetTitle = makeLabel(text_.resetTitle, 15.f, PandaUI::FontWeight::Bold, kText);
+    resetTitle->layout().setWidth(PandaUI::Length::percent(100.f));
+    resetHeader->addSubview(resetTitle);
 
-    // Keep a stable slot for the warning. Revealing it does not push the
-    // confirmation button below the viewport after the first tap.
-    auto resetConfirmationSlot = std::make_shared<PandaUI::Panel>();
-    resetConfirmationSlot->setBackgroundColor(Colors::transparent());
-    resetConfirmationSlot->layout().setWidth(PandaUI::Length::percent(100.f));
-    resetConfirmationSlot->layout().setHeight(PandaUI::Length::points(44.f));
-    resetConfirmationSlot->layout().setFlexDirection(PandaUI::FlexDirection::Column);
-    resetConfirmationSlot->layout().setJustifyContent(PandaUI::Justify::Center);
-    resetConfirmationSlot->layout().setAlignItems(PandaUI::Align::Center);
-
+    // Reuse the description's space for confirmation instead of leaving an
+    // empty warning slot. Its fixed height keeps the button still when armed.
     resetHint_ = makeLabel(
-        text_.resetConfirmHint,
-        12.f,
-        PandaUI::FontWeight::Medium,
-        Colors::danger(),
-        3,
-        PandaUI::TextAlignment::Center
+        text_.resetDescription, 13.f, PandaUI::FontWeight::Regular,
+        kSecondaryText, 2
     );
     resetHint_->layout().setWidth(PandaUI::Length::percent(100.f));
-    resetHint_->setHidden(true);
-    resetConfirmationSlot->addSubview(resetHint_);
-    resetSection->addSubview(resetConfirmationSlot);
+    resetHint_->layout().setHeight(PandaUI::Length::points(40.f));
+    resetHint_->setVerticalTextAlignment(PandaUI::TextVerticalAlignment::Top);
+    resetHeader->addSubview(resetHint_);
+    resetSection->addSubview(resetHeader);
 
-    resetButton_ = makeButton(text_.resetButton, PandaUI::ButtonStyle::Neutral, 48.f);
+    resetButton_ = std::make_shared<SettingsButton>(text_.resetButton, true);
     resetButton_->layout().setWidth(PandaUI::Length::percent(100.f));
-    resetButton_->getTitleLabel()->setTextColor(Colors::danger());
     resetButton_->setOnClick([this](PandaUI::Button &) { handleReset(); });
     resetSection->addSubview(resetButton_);
     card->addSubview(resetSection);
 
-    auto backButton = makeButton(text_.backButton, PandaUI::ButtonStyle::AccentOutline, 50.f);
+    auto backButton = std::make_shared<SettingsButton>(text_.backButton);
     backButton->layout().setWidth(PandaUI::Length::percent(100.f));
     backButton->setOnClick([action = std::move(back)](PandaUI::Button &) {
         if (action) {
@@ -243,16 +406,10 @@ SettingsView::SettingsView(
 void SettingsView::setLanguage(MenuLanguage language) {
     language_ = language;
     if (russianButton_) {
-        russianButton_->setStyle(
-            language == MenuLanguage::Russian ? PandaUI::ButtonStyle::Accent
-                                              : PandaUI::ButtonStyle::AccentOutline
-        );
+        russianButton_->setSelected(language == MenuLanguage::Russian);
     }
     if (englishButton_) {
-        englishButton_->setStyle(
-            language == MenuLanguage::English ? PandaUI::ButtonStyle::Accent
-                                              : PandaUI::ButtonStyle::AccentOutline
-        );
+        englishButton_->setSelected(language == MenuLanguage::English);
     }
 }
 
@@ -262,21 +419,27 @@ void SettingsView::setMusicEnabled(bool enabled) {
     }
 }
 
+void SettingsView::setImmortalModeEnabled(bool enabled) {
+    if (immortalModeToggle_) {
+        immortalModeToggle_->setOn(enabled);
+    }
+}
+
 void SettingsView::handleReset() {
     if (!resetArmed_) {
         resetArmed_ = true;
-        resetHint_->setHidden(false);
+        resetHint_->setText(text_.resetConfirmHint);
+        resetHint_->setTextColor(kDangerText);
         resetButton_->setText(text_.resetConfirmButton);
-        resetButton_->setStyle(PandaUI::ButtonStyle::AccentOutline);
-        resetButton_->getTitleLabel()->setTextColor(Colors::danger());
+        resetButton_->setSelected(true);
         return;
     }
 
     resetArmed_ = false;
-    resetHint_->setHidden(true);
+    resetHint_->setText(text_.resetDescription);
+    resetHint_->setTextColor(kSecondaryText);
     resetButton_->setText(text_.resetButton);
-    resetButton_->setStyle(PandaUI::ButtonStyle::Neutral);
-    resetButton_->getTitleLabel()->setTextColor(Colors::danger());
+    resetButton_->setSelected(false);
     if (resetProgress_) {
         resetProgress_();
     }

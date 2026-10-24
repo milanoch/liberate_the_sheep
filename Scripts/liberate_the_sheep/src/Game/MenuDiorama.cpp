@@ -25,8 +25,7 @@ namespace {
     constexpr float kVisibleSoilDepth = 0.90f;
     constexpr float kRunnerOffscreenMargin = 1.4f;
     constexpr float kCloudOffscreenMargin = 0.35f;
-    constexpr float kRunnerCenterSpacing = 2.2f;
-    constexpr float kRunnerOffscreenHold = 1.f;
+    constexpr std::size_t kMaximumActiveRunners = 6u;
     // Visible alpha bounds of hay_bale.png, expressed from the bottom of its
     // Sprite quad. A tiny overlap settles the bale into the grass blades.
     constexpr float kHayVisibleBottom = 166.f / 1024.f;
@@ -107,6 +106,8 @@ void MenuDiorama::start() {
     clouds_.clear();
     elapsed_ = 0.f;
     running_ = true;
+    spawnDelay_ = 0.15f;
+    random_.seed(std::random_device{}());
 
     Bamboo::EntityHandle camera = Bamboo::WorldAPI::findByTag("Camera");
     if (valid(camera)) {
@@ -182,33 +183,11 @@ void MenuDiorama::start() {
         runner.x = position.x;
         runner.groundY = position.y;
         runner.depth = position.z;
-        // The sheep art faces right. Mirroring scale.x in menu.world is the
-        // editor-authored direction control and remains stable across updates.
+        // Keep authored scale/depth, but choose direction anew for each sheep.
+        // Until then, this direction only determines the offscreen parking side.
         runner.direction = scale.x < 0.f ? -1.f : 1.f;
         runner.baseScale = absoluteScale(scale);
         runners_.push_back(runner);
-    }
-
-    std::stable_sort(
-        runners_.begin(),
-        runners_.end(),
-        [](const Runner &lhs, const Runner &rhs) {
-            if (lhs.direction != rhs.direction) {
-                return lhs.direction > rhs.direction;
-            }
-            return lhs.direction > 0.f ? lhs.x > rhs.x : lhs.x < rhs.x;
-        }
-    );
-
-    std::uint64_t coatSeed = 1469598103934665603ULL;
-    for (const Runner &runner : runners_) {
-        coatSeed = (coatSeed ^ runner.entity.id) * 1099511628211ULL;
-    }
-    const std::vector<SheepCoat> coatOrder = makeBalancedCoatOrder(
-        runners_.size(), coatSeed
-    );
-    for (std::size_t index = 0; index < runners_.size(); ++index) {
-        runners_[index].coat = static_cast<int>(coatOrder[index]);
     }
 
     if (runners_.empty()) {
@@ -246,10 +225,6 @@ void MenuDiorama::start() {
     }
 
     refreshLayout();
-    for (Runner &runner : runners_) {
-        updateScheduledRunnerPosition(runner);
-        applyRunnerTransform(runner);
-    }
     for (Cloud &cloud : clouds_) {
         applyCloudTransform(cloud);
     }
@@ -277,14 +252,7 @@ void MenuDiorama::update(float deltaTime) {
 
     const float step = std::clamp(deltaTime, 0.f, 0.1f);
     elapsed_ += step;
-    for (Runner &runner : runners_) {
-        if (!valid(runner.entity)) {
-            continue;
-        }
-
-        updateScheduledRunnerPosition(runner);
-        applyRunnerTransform(runner);
-    }
+    updateRunners(step);
 
     for (Cloud &cloud : clouds_) {
         if (!valid(cloud.entity)) {
@@ -373,84 +341,102 @@ void MenuDiorama::refreshLayout() {
     }
 
     for (Runner &runner : runners_) {
+        if (!valid(runner.entity)) { continue; }
         runner.groundY = groundSurfaceY_ +
             MenuSheepMotion::kGroundOffset * runner.baseScale.y;
-    }
-    refreshRunnerSchedule();
-}
-
-void MenuDiorama::refreshRunnerSchedule() {
-    const float resetDistance = visibleHalfWidth_ + kRunnerOffscreenMargin +
-        std::abs(obstacleX_ - cameraCenterX_);
-    float longestHalfRouteTime = 0.f;
-    for (const Runner &runner : runners_) {
-        const MenuSheepMotion::JumpArc arc = MenuSheepMotion::makeJumpArc(
-            obstacleHalfWidth_, obstacleTopY_ - runner.groundY,
-            runner.baseScale.x, runner.baseScale.y
-        );
-        longestHalfRouteTime = std::max(
-            longestHalfRouteTime, MenuSheepMotion::routeTime(resetDistance, arc)
-        );
-    }
-    const float directionSwitchGap =
-        2.f * longestHalfRouteTime + kRunnerOffscreenHold;
-
-    const std::size_t rightCount = static_cast<std::size_t>(std::count_if(
-        runners_.begin(),
-        runners_.end(),
-        [](const Runner &runner) { return runner.direction > 0.f; }
-    ));
-    const std::size_t leftCount = runners_.size() - rightCount;
-
-    if (rightCount > 0u && leftCount > 0u) {
-        // Run small same-direction flocks, then leave enough time for the last
-        // sheep to exit before a flock enters from the opposite side. This
-        // prevents two mirrored sprites from merging into a two-headed shape.
-        const float rightSpan = kRunnerCenterSpacing *
-            static_cast<float>(rightCount - 1u);
-        const float leftSpan = kRunnerCenterSpacing *
-            static_cast<float>(leftCount - 1u);
-        const float leftStart = rightSpan + directionSwitchGap;
-        runnerCycleDuration_ =
-            rightSpan + directionSwitchGap + leftSpan + directionSwitchGap;
-
-        std::size_t rightOrdinal = 0u;
-        std::size_t leftOrdinal = 0u;
-        for (Runner &runner : runners_) {
-            if (runner.direction > 0.f) {
-                runner.scheduleTime =
-                    static_cast<float>(rightOrdinal++) * kRunnerCenterSpacing;
-            } else {
-                runner.scheduleTime = leftStart +
-                    static_cast<float>(leftOrdinal++) * kRunnerCenterSpacing;
-            }
-        }
-    } else {
-        const float minimumCycle = std::max(
-            kRunnerCenterSpacing *
-                static_cast<float>(std::max<std::size_t>(1u, runners_.size())),
-            directionSwitchGap
-        );
-        runnerCycleDuration_ = minimumCycle;
-        for (std::size_t index = 0; index < runners_.size(); ++index) {
-            runners_[index].scheduleTime =
-                runnerCycleDuration_ * static_cast<float>(index) /
-                static_cast<float>(runners_.size());
+        if (runner.active) {
+            // Preserve position/animation phase on resize, even while paused.
+            const auto arc = MenuSheepMotion::makeJumpArc(
+                obstacleHalfWidth_, obstacleTopY_ - runner.groundY,
+                runner.baseScale.x, runner.baseScale.y
+            );
+            runner.routeTime = MenuSheepMotion::routeTime(
+                (runner.x - obstacleX_) * runner.direction, arc
+            );
+            applyRunnerTransform(runner);
+        } else {
+            // Hidden actors must stay outside the *new* viewport as it widens.
+            parkRunner(runner);
         }
     }
 }
 
-void MenuDiorama::updateScheduledRunnerPosition(Runner &runner) const {
-    const float relativeTime = wrapped(
-        elapsed_ - runner.scheduleTime + runnerCycleDuration_ * 0.5f,
-        runnerCycleDuration_
-    ) - runnerCycleDuration_ * 0.5f;
+float MenuDiorama::runnerOffscreenDistance(const Runner &runner) const {
+    const auto arc = MenuSheepMotion::makeJumpArc(
+        obstacleHalfWidth_, obstacleTopY_ - runner.groundY,
+        runner.baseScale.x, runner.baseScale.y
+    );
+    const float margin = std::max(kRunnerOffscreenMargin, runner.baseScale.x * 0.5f + 0.1f);
+    return std::max(visibleHalfWidth_ + std::abs(obstacleX_ - cameraCenterX_) + margin,
+                    arc.windowHalfWidth() + margin);
+}
+
+void MenuDiorama::parkRunner(Runner &runner) const {
+    runner.x = obstacleX_ - runner.direction * runnerOffscreenDistance(runner);
+    applyRunnerTransform(runner);
+}
+
+void MenuDiorama::updateRunners(float step) {
+    std::size_t activeCount = 0u;
+    for (Runner &runner : runners_) {
+        if (!valid(runner.entity)) {
+            runner.active = false;
+            continue;
+        }
+        if (!runner.active) { continue; }
+        runner.routeTime += step;
+        updateRunnerPosition(runner);
+        if ((runner.x - obstacleX_) * runner.direction > runnerOffscreenDistance(runner)) {
+            // Recycle only after the complete sheep has left the current view.
+            runner.active = false;
+            parkRunner(runner);
+        } else {
+            ++activeCount;
+            applyRunnerTransform(runner);
+        }
+    }
+
+    // One continuous arrival timer, not a preselected flock or a direction cycle.
+    // At capacity wait for just one free actor, without building a spawn backlog.
+    spawnDelay_ = std::max(0.f, spawnDelay_ - step);
+    if (spawnDelay_ > 0.f || activeCount >= kMaximumActiveRunners) { return; }
+
+    auto next = std::find_if(runners_.begin(), runners_.end(), [](Runner &runner) {
+        return !runner.active && valid(runner.entity);
+    });
+    if (next == runners_.end()) { return; }
+    Runner &runner = *next;
+    // Sample only this arrival. Other sheep may still be running either way.
+    runner.direction = std::uniform_int_distribution<int>(0, 1)(random_) == 0 ? -1.f : 1.f;
+    runner.coat = std::uniform_int_distribution<int>(0, static_cast<int>(kSheepCoatCount) - 1)(random_);
+    runner.frame = -1;
+    const auto arc = MenuSheepMotion::makeJumpArc(
+        obstacleHalfWidth_, obstacleTopY_ - runner.groundY,
+        runner.baseScale.x, runner.baseScale.y
+    );
+    float spawnDistance = -runnerOffscreenDistance(runner);
+    for (const Runner &other : runners_) {
+        if (!other.active || other.direction != runner.direction) { continue; }
+        // A narrower viewport must not move a new entry ahead of the old tail.
+        const float spacing = std::max(MenuSheepMotion::kRunSpeed * 1.1f,
+            (runner.baseScale.x + other.baseScale.x) * 0.5f + 0.15f);
+        spawnDistance = std::min(spawnDistance,
+            (other.x - obstacleX_) * runner.direction - spacing);
+    }
+    runner.routeTime = MenuSheepMotion::routeTime(spawnDistance, arc);
+    runner.active = true;
+    updateRunnerPosition(runner);
+    applyRunnerTransform(runner);
+    spawnDelay_ = std::uniform_real_distribution<float>(0.7f, 2.1f)(random_);
+}
+
+void MenuDiorama::updateRunnerPosition(Runner &runner) const {
     const MenuSheepMotion::JumpArc arc = MenuSheepMotion::makeJumpArc(
         obstacleHalfWidth_, obstacleTopY_ - runner.groundY,
         runner.baseScale.x, runner.baseScale.y
     );
     runner.x = obstacleX_ + runner.direction *
-        MenuSheepMotion::routeDistance(relativeTime, arc);
+        MenuSheepMotion::routeDistance(runner.routeTime, arc);
 }
 
 void MenuDiorama::applyRunnerTransform(Runner &runner) const {

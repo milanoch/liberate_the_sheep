@@ -1,4 +1,5 @@
 #include "Game/SettingsStore.hpp"
+#include "Game/SettingsFormat.hpp"
 
 #include <Bamboo/ApplicationAPI.hpp>
 
@@ -11,7 +12,6 @@
 namespace LiberateTheSheep::Game {
 namespace {
 
-    constexpr std::string_view kFileMagic = "LIBERATE_THE_SHEEP_SETTINGS";
     constexpr std::string_view kSaveFileName = "liberate_the_sheep_settings.sav";
     constexpr std::string_view kTemporarySuffix = ".tmp";
     constexpr std::string_view kBackupSuffix = ".bak";
@@ -50,33 +50,7 @@ namespace {
                 return false;
             }
 
-            std::string magic;
-            std::uint32_t fileVersion{};
-            unsigned int languageValue{};
-            unsigned int musicValue{};
-            if (!(input >> magic >> fileVersion >> languageValue >> musicValue)) {
-                return false;
-            }
-
-            input >> std::ws;
-            if (input.peek() != std::char_traits<char>::eof()) {
-                return false;
-            }
-            if (magic != kFileMagic || fileVersion != SettingsStore::kFileVersion ||
-                languageValue > static_cast<unsigned int>(Language::English) || musicValue > 1U) {
-                return false;
-            }
-
-            const SettingsData loaded{
-                static_cast<Language>(languageValue),
-                musicValue != 0U,
-            };
-            if (!isValid(loaded)) {
-                return false;
-            }
-
-            result = loaded;
-            return true;
+            return SettingsFormat::read(input, result);
         } catch (...) {
             return false;
         }
@@ -152,9 +126,11 @@ namespace {
                     return false;
                 }
 
-                output << kFileMagic << ' ' << SettingsStore::kFileVersion << ' '
-                       << static_cast<unsigned int>(settings.language) << ' '
-                       << (settings.musicEnabled ? 1 : 0) << '\n';
+                if (!SettingsFormat::write(output, settings)) {
+                    output.close();
+                    removeFile(temporaryPath);
+                    return false;
+                }
                 output.flush();
                 if (!output) {
                     output.close();
@@ -216,6 +192,10 @@ bool SettingsStore::musicEnabled() const noexcept {
     return m_settings.musicEnabled;
 }
 
+bool SettingsStore::immortalModeEnabled() const noexcept {
+    return m_settings.immortalModeEnabled;
+}
+
 bool SettingsStore::setLanguage(Language language) noexcept {
     if (!isValidLanguage(language) || language == m_settings.language) {
         return false;
@@ -240,6 +220,14 @@ bool SettingsStore::setMusicEnabled(bool enabled) noexcept {
 bool SettingsStore::toggleMusic() noexcept {
     m_settings.musicEnabled = !m_settings.musicEnabled;
     return m_settings.musicEnabled;
+}
+
+bool SettingsStore::setImmortalModeEnabled(bool enabled) noexcept {
+    if (enabled == m_settings.immortalModeEnabled) {
+        return false;
+    }
+    m_settings.immortalModeEnabled = enabled;
+    return true;
 }
 
 } // namespace LiberateTheSheep::Game

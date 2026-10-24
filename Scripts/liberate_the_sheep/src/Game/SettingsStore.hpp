@@ -9,16 +9,17 @@ namespace LiberateTheSheep::Game {
 struct SettingsData final {
     Language language{Language::Russian};
     bool musicEnabled{true};
+    bool immortalModeEnabled{false};
 };
 
 class SettingsStore final {
 public:
-    static constexpr std::uint32_t kFileVersion = 1;
+    static constexpr std::uint32_t kFileVersion = 2;
 
     SettingsStore() noexcept = default;
 
-    // Returns true only when a current, fully valid file was loaded. Any error
-    // restores safe defaults so callers can use settings() unconditionally.
+    // Reads fully valid v1 or v2 files. Legacy v1 settings default immortal
+    // mode to false. Errors restore defaults without modifying the saved file.
     [[nodiscard]] bool load() noexcept;
     [[nodiscard]] bool save() const noexcept;
 
@@ -27,6 +28,7 @@ public:
     [[nodiscard]] const SettingsData &settings() const noexcept;
     [[nodiscard]] Language language() const noexcept;
     [[nodiscard]] bool musicEnabled() const noexcept;
+    [[nodiscard]] bool immortalModeEnabled() const noexcept;
 
     // Mutators do not write implicitly: menu code can update several controls
     // and call save() once. The setters report whether the value changed;
@@ -35,6 +37,7 @@ public:
     [[nodiscard]] Language cycleLanguage() noexcept;
     [[nodiscard]] bool setMusicEnabled(bool enabled) noexcept;
     [[nodiscard]] bool toggleMusic() noexcept;
+    [[nodiscard]] bool setImmortalModeEnabled(bool enabled) noexcept;
 
 private:
     SettingsData m_settings;

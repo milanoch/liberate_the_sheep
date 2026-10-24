@@ -44,7 +44,7 @@ public:
         Action replay;
     };
 
-    explicit GameplayRootView(Callbacks callbacks = {}, GameplayText text = {});
+    explicit GameplayRootView(Callbacks callbacks = {}, GameplayText text = {}, bool showHearts = true);
 
     // frame is expressed in root/window logical points and must match the
     // rendered world-board rectangle.
@@ -64,6 +64,7 @@ private:
     std::shared_ptr<PandaUI::Panel> makeResultOverlay(Callbacks &callbacks);
 
     GameplayText text_;
+    bool showHearts_{true};
     std::shared_ptr<BoardInputView> boardInput_;
     std::shared_ptr<PandaUI::Label> levelLabel_;
     std::shared_ptr<PandaUI::Label> heartsLabel_;
