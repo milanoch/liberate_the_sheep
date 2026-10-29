@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Game/LevelCatalog.hpp"
+
 namespace LiberateTheSheep::Game {
 
 // Process-local handoff between controllers on either side of WorldAPI::load().
@@ -9,7 +11,7 @@ class SessionState final {
 public:
     static constexpr int kNoLevelRequested = 0;
     static constexpr int kFirstLevel = 1;
-    static constexpr int kLastLevel = 9;
+    static constexpr int kLastLevel = kCampaignLevelCount;
 
     static void requestLevel(int levelNumber) noexcept;
     [[nodiscard]] static int peekRequestedLevel() noexcept;

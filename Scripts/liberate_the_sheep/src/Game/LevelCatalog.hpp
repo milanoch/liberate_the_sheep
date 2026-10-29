@@ -8,9 +8,19 @@
 
 namespace LiberateTheSheep::Game {
 
+inline constexpr int kCampaignLevelCount = 39;
+
 struct LevelDefinition {
     int number{};
     GenerationConfig generation;
+    // Zero keeps the original untimed rules. Waves are one-based and describe
+    // the preferred depth of the bomb sheep's blockers, not a fixed sheep ID.
+    float bombSeconds{};
+    int bombPreferredWave{1};
+    // Impact bombs have no clock. Their counter decreases only when another
+    // sheep hits them as the nearest blocker; zero disables this mechanic.
+    int impactBombHits{};
+    int impactBombPreferredWave{2};
 };
 
 [[nodiscard]] std::span<const LevelDefinition> levelCatalog() noexcept;

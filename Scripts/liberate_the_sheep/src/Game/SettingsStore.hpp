@@ -10,16 +10,17 @@ struct SettingsData final {
     Language language{Language::Russian};
     bool musicEnabled{true};
     bool immortalModeEnabled{false};
+    bool cheatModeEnabled{false};
 };
 
 class SettingsStore final {
 public:
-    static constexpr std::uint32_t kFileVersion = 2;
+    static constexpr std::uint32_t kFileVersion = 3;
 
     SettingsStore() noexcept = default;
 
-    // Reads fully valid v1 or v2 files. Legacy v1 settings default immortal
-    // mode to false. Errors restore defaults without modifying the saved file.
+    // Reads v1-v3 files. Missing legacy options default to false. Errors
+    // restore defaults without modifying the saved file.
     [[nodiscard]] bool load() noexcept;
     [[nodiscard]] bool save() const noexcept;
 
@@ -29,6 +30,7 @@ public:
     [[nodiscard]] Language language() const noexcept;
     [[nodiscard]] bool musicEnabled() const noexcept;
     [[nodiscard]] bool immortalModeEnabled() const noexcept;
+    [[nodiscard]] bool cheatModeEnabled() const noexcept;
 
     // Mutators do not write implicitly: menu code can update several controls
     // and call save() once. The setters report whether the value changed;
@@ -38,6 +40,7 @@ public:
     [[nodiscard]] bool setMusicEnabled(bool enabled) noexcept;
     [[nodiscard]] bool toggleMusic() noexcept;
     [[nodiscard]] bool setImmortalModeEnabled(bool enabled) noexcept;
+    [[nodiscard]] bool setCheatModeEnabled(bool enabled) noexcept;
 
 private:
     SettingsData m_settings;

@@ -22,8 +22,8 @@ namespace {
          "Tap a sheep only when the way ahead is clear."},
 
         {"УРОВНИ", "LEVELS"},
-        {"Три размера поля, девять головоломок.",
-         "Three field sizes, nine deterministic puzzles."},
+        {"39 уровней. Освободи всё стадо!",
+         "39 levels. Set the whole flock free!"},
         {"УРОВЕНЬ", "LEVEL"},
         {"ЗАКРЫТ", "LOCKED"},
         {"ГОТОВ", "READY"},
@@ -65,8 +65,34 @@ namespace {
         {"ПЕРЕИГРАТЬ", "REPLAY"},
 
         {"БЕССМЕРТНЫЙ РЕЖИМ", "IMMORTAL MODE"},
-        {"Ошибки не отнимают жизни. Счётчик сердец скрыт.",
-         "Unlimited mistakes. The heart counter is hidden."},
+        {"Без потери жизней и поражений от бомбы. Счётчик сердец скрыт.",
+         "No lost lives or bomb defeats. The heart counter is hidden."},
+
+        {"ОВЕЧКА С БОМБОЙ", "A SHEEP WITH A BOMB"},
+        {"На спине этой овечки — красная бомба. Освободи ей путь: овечка должна целиком выйти через ворота до нуля на таймере. В обычном режиме взрыв означает поражение. Отсчёт начнётся после нажатия кнопки ниже.",
+         "This sheep carries a red bomb. Clear its path: the whole sheep must pass through the gate before the timer reaches zero. In normal mode an explosion means defeat. The countdown starts when you press the button below."},
+        {"В бессмертном режиме таймер учебный: на нуле бомба безопасно погаснет. Овечка останется в игре, и ты сможешь продолжить без поражения.",
+         "In immortal mode the timer is for practice: at zero the bomb safely fizzles out. The sheep stays in play and you can continue without losing."},
+        {"ПОЕХАЛИ!", "LET'S GO!"},
+        {"ДО ВЗРЫВА", "BOMB TIMER"},
+        {"ОВЕЧКА В БЕЗОПАСНОСТИ", "SHEEP RESCUED"},
+        {"БОМБА ПОГАШЕНА", "BOMB DEFUSED"},
+        {"ВРЕМЯ ВЫШЛО", "TIME IS UP"},
+        {"Овечка с бомбой не успела выйти из загона. Попробуй ещё раз: сначала освободи ей путь к воротам.",
+         "The sheep with the bomb did not leave the pen in time. Try again and clear its route to the gate first."},
+
+        {"ОВЕЧКА С ЧЁРНОЙ БОМБОЙ", "A SHEEP WITH A BLACK BOMB"},
+        {"Число на чёрной бомбе — сколько ударов осталось до взрыва. Оно уменьшается на один, когда другая овечка упирается прямо в эту овечку. Например, при числе 3 третий удар вызовет взрыв и поражение. Удар по другой овечке не считается. Такие удары расходуют заряд бомбы вместо сердца. Освободи путь и выведи овечку целиком через ворота, чтобы обезвредить бомбу.",
+         "The number on the black bomb shows how many hits remain before it explodes. It drops by one when another sheep runs directly into this sheep. With a 3, the third hit causes an explosion and defeat. Hitting a different sheep does not count. These hits use a bomb charge instead of a heart. Clear the way and get the whole sheep through the gate to defuse the bomb."},
+        {"В бессмертном режиме число тоже уменьшается от ударов, но на нуле бомба безопасно погаснет. Овечка останется в игре, и ты сможешь продолжить без поражения.",
+         "In immortal mode hits still reduce the number, but at zero the bomb safely fizzles out. The sheep stays in play and you can continue without losing."},
+        {"УДАРОВ ДО ВЗРЫВА", "HITS UNTIL EXPLOSION"},
+        {"БОМБА НЕ ВЫДЕРЖАЛА УДАР", "THE BOMB WAS HIT TOO OFTEN"},
+        {"В овечку с чёрной бомбой врезались слишком много раз. Попробуй ещё раз и освободи ей путь, не направляя на неё других овечек.",
+         "The sheep with the black bomb took too many hits. Try again and clear its route without sending other sheep into it."},
+        {"ЧИТ: ВСЕ УРОВНИ", "CHEAT: ALL LEVELS"},
+        {"Открывает все уровни для проверки. Сохранённый прогресс не меняется.",
+         "Open every level for testing. Your saved progress stays unchanged."},
     }};
 
     static_assert(kTranslations.size() == static_cast<std::size_t>(TextKey::Count));

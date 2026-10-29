@@ -1,5 +1,6 @@
 #include "UI/LevelSelectView.hpp"
 
+#include "Game/LevelCatalog.hpp"
 #include "UI/UIStyle.hpp"
 
 #include <algorithm>
@@ -11,7 +12,6 @@
 namespace LiberateTheSheep::UI {
 namespace {
 
-    constexpr std::size_t kCampaignLevelCount = 9;
     constexpr std::size_t kLevelsPerRow = 3;
 
     enum class LevelStatus { Current, Completed, Locked };
@@ -171,9 +171,12 @@ LevelSelectView::LevelSelectView(
     int highestUnlocked,
     std::span<const int> bestHearts,
     LevelAction playLevel,
-    Action back
+    Action back,
+    bool allLevelsUnlocked
 ) {
-    const std::size_t levelCount = std::max(kCampaignLevelCount, bestHearts.size());
+    const std::size_t levelCount = std::max(
+        static_cast<std::size_t>(Game::kCampaignLevelCount), bestHearts.size()
+    );
     const int unlockedThrough =
         std::clamp(highestUnlocked, 1, static_cast<int>(levelCount));
 
@@ -264,7 +267,7 @@ LevelSelectView::LevelSelectView(
             }
 
             const int levelNumber = static_cast<int>(index + 1);
-            const bool unlocked = levelNumber <= unlockedThrough;
+            const bool unlocked = allLevelsUnlocked || levelNumber <= unlockedThrough;
             const int hearts = index < bestHearts.size() ? bestHearts[index] : 0;
             const bool completed = unlocked && (hearts > 0 || levelNumber < unlockedThrough);
             const LevelStatus status = !unlocked ? LevelStatus::Locked

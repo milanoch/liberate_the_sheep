@@ -65,6 +65,26 @@ enum class TextKey : std::size_t {
     ImmortalMode,
     ImmortalModeDescription,
 
+    BombTitle,
+    BombInstructions,
+    BombImmortalInstructions,
+    BombStart,
+    BombTimer,
+    BombRescued,
+    BombDefused,
+    BombExpired,
+    BombDefeatMessage,
+
+    ImpactBombTitle,
+    ImpactBombInstructions,
+    ImpactBombImmortalInstructions,
+    ImpactBombHits,
+    ImpactBombExpired,
+    ImpactBombDefeatMessage,
+
+    CheatMode,
+    CheatModeDescription,
+
     Count,
 };
 

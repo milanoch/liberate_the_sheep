@@ -4059,6 +4059,32 @@
                 "material": 0,
                 "texture": 3451186574
             }
+        },
+        {
+            "id": 1744052777,
+            "tagComponent": {
+                "tag": "BombSheepAccessory"
+            },
+            "relationshipComponent": {
+                "parent": 0,
+                "children": []
+            },
+            "transformComponent": {
+                "position": { "x": 0, "y": 0, "z": 0.16 },
+                "rotation": { "x": 0, "y": 0, "z": 0, "w": 1 },
+                "scale": { "x": 1.16, "y": 1.16, "z": 1 }
+            },
+            "scriptListComponent": {
+                "scripts": []
+            },
+            "spriteRendererComponent": {
+                "color": { "x": 1, "y": 1, "z": 1, "w": 0 },
+                "cols": 2,
+                "rows": 1,
+                "index": 0,
+                "material": 0,
+                "texture": 2523272276
+            }
         }
     ]
 }

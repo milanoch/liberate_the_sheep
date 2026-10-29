@@ -9,16 +9,19 @@
 #include "UI/GameplayRootView.hpp"
 
 #include <Bamboo/ApplicationAPI.hpp>
+#include <Bamboo/Assets/TextureAPI.hpp>
 #include <Bamboo/Components/SpriteRendererComponentAPI.hpp>
 #include <Bamboo/Components/TransformComponentAPI.hpp>
 #include <Bamboo/EntityAPI.hpp>
 #include <Bamboo/Logger.hpp>
+#include <Bamboo/UI/TextureAPI.hpp>
 #include <Bamboo/WorldAPI.hpp>
 
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <memory>
+#include <limits>
 #include <string>
 #include <utility>
 
@@ -32,6 +35,23 @@ namespace {
     // sheep of 0.82 x 1.78 cells, within the path planner's tested envelope.
     constexpr float kSheepWidthInCells = 1.23f;
     constexpr float kSheepLengthInCells = 1.97f;
+    constexpr float kBombSizeInCells = 1.16f;
+    constexpr float kBombBackOffset = -0.12f;
+    // Include the full tail and fence thickness, not just the sheep's center.
+    constexpr float kBombGateClearance = 1.10f;
+    constexpr float kBombExplosionDuration = 0.70f;
+
+    PandaUI::TextureHandle uiTexture(Bamboo::TextureHandle source) {
+        if (!source.isValid()) { return {}; }
+        const auto pixels = Bamboo::TextureAPI::readPixelsRGBA8(source);
+        constexpr auto maxSize = std::numeric_limits<std::uint16_t>::max();
+        if (!pixels || pixels.width > maxSize || pixels.height > maxSize ||
+            static_cast<std::uint64_t>(pixels.width) * pixels.height * 4u != pixels.pixels.size()) {
+            return {};
+        }
+        return Bamboo::UI::createTextureRGBA8(pixels.pixels.data(),
+            static_cast<std::uint16_t>(pixels.width), static_cast<std::uint16_t>(pixels.height));
+    }
 
     [[nodiscard]] float clamp01(float value) noexcept {
         return std::clamp(value, 0.f, 1.f);
@@ -92,7 +112,8 @@ void LevelController::start() {
     createUI();
 
     int levelToLoad = requestedLevel;
-    if (!progress_.isUnlocked(levelToLoad)) {
+    if (levelToLoad < ProgressStore::kFirstLevel || levelToLoad > ProgressStore::kLastLevel ||
+        (!settings_.cheatModeEnabled() && !progress_.isUnlocked(levelToLoad))) {
         levelToLoad = progress_.progress().highestUnlocked;
     }
     loadLevel(levelToLoad);
@@ -108,8 +129,20 @@ void LevelController::update(float deltaTime) {
     }
 
     refreshLayout();
-    updateAnimation(std::max(0.f, deltaTime));
-    updateHint(std::max(0.f, deltaTime));
+    // Use the same simulation clock as EscapeHerd. A suspended application or
+    // stalled frame must not burn a deadline while the sheep cannot move.
+    const float step = std::isfinite(deltaTime) ? std::clamp(deltaTime, 0.f, 0.1f) : 0.f;
+    if (phase_ == Phase::BombExplosion) {
+        bomb_.explosionElapsed += step;
+        if (bomb_.explosionElapsed >= kBombExplosionDuration) {
+            phase_ = Phase::Defeat;
+            if (rootView_) { rootView_->showBombDefeat(bomb_.impact); }
+        }
+    } else {
+        updateAnimation(step);
+        updateHint(step);
+    }
+    updateBombVisual();
 }
 
 void LevelController::shutdown() {
@@ -119,6 +152,11 @@ void LevelController::shutdown() {
         window_.setRootView(nullptr);
     }
     rootView_.reset();
+    if (bombUiTexture_) { Bamboo::UI::destroyTexture(bombUiTexture_); bombUiTexture_ = {}; }
+    if (standingSheepUiTexture_) {
+        Bamboo::UI::destroyTexture(standingSheepUiTexture_);
+        standingSheepUiTexture_ = {};
+    }
     destroyGeneratedEntities();
     (void)progress_.save();
     board_.reset();
@@ -139,6 +177,7 @@ void LevelController::createUI() {
     callbacks.menu = [this]() { returnToMenu(); };
     callbacks.next = [this]() { defer([this]() { nextLevel(); }); };
     callbacks.replay = [this]() { defer([this]() { restartLevel(); }); };
+    callbacks.startBombLevel = [this]() { defer([this]() { startBombLevel(); }); };
 
     const Language language = settings_.language();
     UI::GameplayText text;
@@ -156,16 +195,43 @@ void LevelController::createUI() {
     text.defeatMessage = localizedString(TextKey::DefeatMessage, language);
     text.nextLevelButton = localizedString(TextKey::NextLevel, language);
     text.replayButton = localizedString(TextKey::Replay, language);
+    text.bombTitle = localizedString(TextKey::BombTitle, language);
+    text.bombInstructions = localizedString(TextKey::BombInstructions, language);
+    text.bombImmortalInstructions = localizedString(TextKey::BombImmortalInstructions, language);
+    text.bombStart = localizedString(TextKey::BombStart, language);
+    text.bombTimer = localizedString(TextKey::BombTimer, language);
+    text.bombRescued = localizedString(TextKey::BombRescued, language);
+    text.bombDefused = localizedString(TextKey::BombDefused, language);
+    text.bombExpired = localizedString(TextKey::BombExpired, language);
+    text.bombDefeatMessage = localizedString(TextKey::BombDefeatMessage, language);
+    text.impactBombTitle = localizedString(TextKey::ImpactBombTitle, language);
+    text.impactBombInstructions = localizedString(TextKey::ImpactBombInstructions, language);
+    text.impactBombImmortalInstructions = localizedString(TextKey::ImpactBombImmortalInstructions, language);
+    text.impactBombHits = localizedString(TextKey::ImpactBombHits, language);
+    text.impactBombExpired = localizedString(TextKey::ImpactBombExpired, language);
+    text.impactBombDefeatMessage = localizedString(TextKey::ImpactBombDefeatMessage, language);
 
     rootView_ =
         std::make_shared<UI::GameplayRootView>(
             std::move(callbacks), std::move(text), hearts_.counterVisible());
+    standingSheepUiTexture_ = uiTexture(sheepTexture);
+    if (bombEntity_.isValid()) {
+        bombUiTexture_ = uiTexture(Bamboo::SpriteRendererComponentAPI::getTexture(bombEntity_));
+    }
+    rootView_->setBombArtwork(standingSheepUiTexture_, bombUiTexture_);
     window_.setRootView(rootView_);
 }
 
 void LevelController::resolveSceneEntities() {
     cameraEntity_ = Bamboo::WorldAPI::findByTag("Camera");
     pasture_.resolve();
+    bombEntity_ = Bamboo::WorldAPI::findByTag("BombSheepAccessory");
+    if (bombEntity_.isValid()) {
+        Bamboo::SpriteRendererComponentAPI::setColor(bombEntity_, {1.f, 1.f, 1.f, 0.f});
+        if (!Bamboo::SpriteRendererComponentAPI::getTexture(bombEntity_).isValid()) {
+            LOG_ERROR("LevelController: assign the registered sheep_bomb.png texture to BombSheepAccessory in game.world");
+        }
+    }
     Bamboo::EntityHandle templateEntity = Bamboo::WorldAPI::findByTag("GameSheepRunTemplate");
     if (templateEntity.isValid()) {
         runningSheepTexture_ = Bamboo::SpriteRendererComponentAPI::getTexture(templateEntity);
@@ -234,12 +300,17 @@ void LevelController::loadLevel(int levelNumber) {
     refreshLayout(true);
 
     if (rootView_) {
+        rootView_->hideBombTutorial();
         rootView_->setBoardSize(board_->width(), board_->height());
         rootView_->hideResult();
         rootView_->setBoardInputEnabled(true);
     }
     phase_ = Phase::Playing;
+    prepareBomb(definition->bombSeconds, definition->bombPreferredWave,
+        definition->generation.seed ^ result.metrics.layoutFingerprint,
+        definition->impactBombHits, definition->impactBombPreferredWave);
     updateHUD();
+    updateBombVisual();
 
     LOG_INFO(
         "Level %d ready: %dx%d, %zu sheep, %.0f%% density, %zu solution waves",
@@ -291,6 +362,15 @@ void LevelController::createGeneratedEntities(std::uint64_t appearanceSeed) {
 }
 
 void LevelController::destroyGeneratedEntities() {
+    bomb_ = {};
+    if (bombEntity_.isValid()) {
+        Bamboo::SpriteRendererComponentAPI::setColor(bombEntity_, {1.f, 1.f, 1.f, 0.f});
+    }
+    if (rootView_) {
+        rootView_->hideBombTutorial();
+        rootView_->updateBombTimer(0.f, false, false, false, settings_.immortalModeEnabled());
+        rootView_->setBombMarker({}, 0.f, 0.f, 0, false);
+    }
     for (SheepVisual &visual : sheepVisuals_) {
         if (visual.entity.isValid()) {
             Bamboo::WorldAPI::destroyEntity(visual.entity);
@@ -401,11 +481,20 @@ void LevelController::applyLayoutToGeneratedEntities() {
 }
 
 void LevelController::updateAnimation(float deltaTime) {
-    if (!board_ || !layout_.valid() || phase_ == Phase::Loading || phase_ == Phase::Error) {
+    if (!board_ || !layout_.valid() || phase_ != Phase::Playing) {
         return;
     }
-    updateEscapes(deltaTime);
-    updateBlockedReactions(deltaTime);
+    // Stop motion precisely at the deadline before deciding whether the tail
+    // crossed the gate. A long frame cannot award a late rescue.
+    const float step = bomb_.state == BombSheep::State::Armed && !bomb_.impact
+        ? std::min(deltaTime, bomb_.seconds) : deltaTime;
+    updateEscapes(step);
+    updateBlockedReactions(step);
+    if (phase_ == Phase::Playing && bomb_.state == BombSheep::State::Armed && !bomb_.impact) {
+        bomb_.seconds = std::max(0.f, bomb_.seconds - step);
+        if (bomb_.seconds <= 0.f) { expireBomb(); }
+        updateBombHUD();
+    }
 }
 
 void LevelController::updateEscapes(float deltaTime) {
@@ -420,6 +509,12 @@ void LevelController::updateEscapes(float deltaTime) {
         // Motion within the run frames supplies the gait. Keep the Sprite on
         // its route without rotating or stretching the entire sheep per step.
         const PenEscape::Sample sample = PenEscape::sample(runner.path, runner.distance);
+        if (runner.sheep.id == bomb_.id && bomb_.state == BombSheep::State::Armed &&
+            sample.position.y <= -PenEscape::kFenceOffset - kBombGateClearance &&
+            std::abs(sample.position.x - static_cast<float>(board_->width()) * 0.5f) < 0.1f) {
+            bomb_.state = BombSheep::State::Rescued;
+            updateBombHUD();
+        }
         const float x = layout_.worldRect.x + sample.position.x * layout_.cellWorldSize;
         const float y = layout_.worldRect.y + sample.position.y * layout_.cellWorldSize;
         Bamboo::TransformComponentAPI::setPosition(visual->entity, {x, y, 0.1f});
@@ -492,6 +587,160 @@ void LevelController::updateHint(float deltaTime) {
     }
 }
 
+void LevelController::prepareBomb(float seconds, int preferredWave, std::uint64_t seed,
+                                 int impactHits, int impactPreferredWave) {
+    if (!board_ || (seconds <= 0.f && impactHits <= 0)) { return; }
+    bomb_.impact = impactHits > 0;
+    if (bomb_.impact) { preferredWave = impactPreferredWave; }
+    // Choose from the generator's solvable dependency waves, rather than a
+    // random deeply buried sheep. The first encounter needs only an early chain.
+    const auto solution = board_->analyzeSolvability();
+    if (solution.solutionWaves.empty()) { return; }
+    const auto waveIndex = std::min(static_cast<std::size_t>(std::max(1, preferredWave) - 1),
+        solution.solutionWaves.size() - 1);
+    const auto &candidates = solution.solutionWaves[waveIndex];
+    if (candidates.empty()) { return; }
+    bomb_.id = candidates[seed % candidates.size()];
+    if (bomb_.impact) {
+        // Introduce an actual collision hazard: prefer a sheep which is the
+        // nearest blocker of another sheep, while retaining a solvable route.
+        // Try the preferred wave first, then the other dependency waves.
+        for (std::size_t offset = 0; offset < solution.solutionWaves.size(); ++offset) {
+            const auto &wave = solution.solutionWaves[(waveIndex + offset) % solution.solutionWaves.size()];
+            std::vector<SheepId> exposed;
+            for (const SheepId candidate : wave) {
+                if (std::any_of(board_->sheep().begin(), board_->sheep().end(),
+                    [this, candidate](const Sheep &attacker) {
+                        return board_->inspectMove(attacker.id).blocker == candidate;
+                    })) {
+                    exposed.push_back(candidate);
+                }
+            }
+            if (!exposed.empty()) {
+                bomb_.id = exposed[seed % exposed.size()];
+                break;
+            }
+        }
+    }
+    bomb_.seconds = seconds;
+    bomb_.hitsRemaining = std::max(0, impactHits);
+    bomb_.state = BombSheep::State::Armed;
+    if (bombEntity_.isValid()) {
+        Bamboo::SpriteRendererComponentAPI::setCell(bombEntity_, 2, 1, bomb_.impact ? 1 : 0);
+    }
+    updateBombHUD();
+
+    // Explain the mechanic on every entry, including replaying a completed
+    // level and restarting it. The countdown begins only after confirmation.
+    if (rootView_) {
+        const SheepVisual *visual = findVisual(bomb_.id);
+        phase_ = Phase::Tutorial;
+        rootView_->setBoardInputEnabled(false);
+        rootView_->showBombTutorial(settings_.immortalModeEnabled(), seconds,
+            visual ? visual->coat : 0, bomb_.impact, bomb_.hitsRemaining);
+    }
+}
+
+bool LevelController::hitImpactBomb(SheepId attacker) {
+    if (!board_ || !bomb_.impact || bomb_.state != BombSheep::State::Armed ||
+        attacker == bomb_.id) {
+        return false;
+    }
+    // Only the nearest obstacle actually receives this blocked move. A sheep
+    // behind another sheep cannot be hit, and the bomb cannot hit itself.
+    const auto move = board_->inspectMove(attacker);
+    if (move.state != MoveState::Blocked || move.blocker != bomb_.id) { return false; }
+    bomb_.hitsRemaining = std::max(0, bomb_.hitsRemaining - 1);
+    if (bomb_.hitsRemaining == 0) { expireBomb(); }
+    updateBombHUD();
+    return true;
+}
+
+void LevelController::startBombLevel() {
+    if (phase_ != Phase::Tutorial) { return; }
+    if (rootView_) {
+        rootView_->hideBombTutorial();
+        rootView_->setBoardInputEnabled(true);
+    }
+    phase_ = Phase::Playing;
+}
+
+PandaUI::Point LevelController::sheepScreenPosition(SheepId id) {
+    SheepVisual *visual = findVisual(id);
+    if (!visual || !visual->entity.isValid() || !layout_.valid()) { return {}; }
+    const auto position = Bamboo::TransformComponentAPI::getPosition(visual->entity);
+    const float pixelsPerWorldUnit = static_cast<float>(layout_.viewportHeight) / layout_.cameraOrthoSize;
+    return {
+        static_cast<float>(layout_.viewportWidth) * 0.5f +
+            (position.x - layout_.cameraPosition.x) * pixelsPerWorldUnit,
+        static_cast<float>(layout_.viewportHeight) * 0.5f -
+            (position.y - layout_.cameraPosition.y) * pixelsPerWorldUnit,
+    };
+}
+
+void LevelController::expireBomb() {
+    clearHint();
+    const bool harmless = settings_.immortalModeEnabled();
+    bomb_.state = harmless ? BombSheep::State::Defused : BombSheep::State::Exploded;
+    if (rootView_) { rootView_->playBombBurst(sheepScreenPosition(bomb_.id), harmless); }
+    if (!harmless) {
+        // A brief, non-graphic puff replaces the sheep before the defeat card.
+        // No escape or victory can be completed while the explosion is playing.
+        phase_ = Phase::BombExplosion;
+        bomb_.explosionElapsed = 0.f;
+        if (SheepVisual *visual = findVisual(bomb_.id); visual && visual->entity.isValid()) {
+            Bamboo::SpriteRendererComponentAPI::setColor(visual->entity, {1.f, 1.f, 1.f, 0.f});
+        }
+        if (rootView_) { rootView_->setBoardInputEnabled(false); }
+    }
+    updateBombHUD();
+}
+
+void LevelController::updateBombHUD() {
+    if (!rootView_) { return; }
+    rootView_->updateBombTimer(bomb_.seconds, bomb_.state != BombSheep::State::None,
+        bomb_.state == BombSheep::State::Rescued, bomb_.state == BombSheep::State::Defused,
+        settings_.immortalModeEnabled(), bomb_.impact, bomb_.hitsRemaining);
+}
+
+void LevelController::updateBombVisual() {
+    SheepVisual *visual = findVisual(bomb_.id);
+    const bool visible = bomb_.state == BombSheep::State::Armed && visual &&
+        visual->entity.isValid() && layout_.valid() && bombEntity_.isValid() &&
+        Bamboo::SpriteRendererComponentAPI::getTexture(bombEntity_).isValid();
+    if (bombEntity_.isValid()) {
+        Bamboo::SpriteRendererComponentAPI::setColor(bombEntity_, {1.f, 1.f, 1.f, visible ? 1.f : 0.f});
+    }
+    if (!visible) {
+        if (rootView_) { rootView_->setBombMarker({}, 0.f, 0.f, 0, false); }
+        return;
+    }
+    const auto position = Bamboo::TransformComponentAPI::getPosition(visual->entity);
+    const auto rotation = Bamboo::TransformComponentAPI::getRotationEuler(visual->entity);
+    const float angle = rotation.z * kPi / 180.f;
+    const float offset = layout_.cellWorldSize * kBombBackOffset;
+    if (bombEntity_.isValid()) {
+        Bamboo::TransformComponentAPI::setPosition(bombEntity_, {
+            position.x - std::sin(angle) * offset,
+            position.y + std::cos(angle) * offset, 0.16f
+        });
+        Bamboo::TransformComponentAPI::setRotationEuler(bombEntity_, rotation);
+        const float size = layout_.cellWorldSize * kBombSizeInCells;
+        Bamboo::TransformComponentAPI::setScale(bombEntity_, {size, size, 1.f});
+    }
+    if (rootView_) {
+        const float cellPixels = layout_.screenRect.width / static_cast<float>(layout_.columns);
+        auto displayCenter = sheepScreenPosition(bomb_.id);
+        // Same back offset, size and rotation as the world Sprite. Digits are
+        // painted in its display, including throughout turns and blocked bumps.
+        displayCenter.x -= std::sin(angle) * cellPixels * kBombBackOffset;
+        displayCenter.y -= std::cos(angle) * cellPixels * kBombBackOffset;
+        rootView_->setBombMarker(displayCenter, cellPixels * kBombSizeInCells,
+            rotation.z, bomb_.impact ? bomb_.hitsRemaining : static_cast<int>(std::ceil(bomb_.seconds)),
+            true, bomb_.impact);
+    }
+}
+
 void LevelController::selectCell(Cell cell) {
     if (phase_ != Phase::Playing || hearts_.isDepleted() || !board_) {
         return;
@@ -531,7 +780,9 @@ void LevelController::beginBlocked(SheepId sheepId) {
         return;
     }
     blockedReactions_.push_back({sheepId, 0.f});
-    hearts_.blockedMove();
+    // The impact bomb is its own mistake budget: do not spend a heart as well.
+    // Other blocked attempts keep the existing life penalty.
+    if (!hitImpactBomb(sheepId)) { hearts_.blockedMove(); }
     updateHUD();
     // Only defeat locks the whole field; a short reaction locks its own sheep.
     if (hearts_.isDepleted() && rootView_) {
@@ -554,7 +805,10 @@ void LevelController::finishEscape(SheepId escaped) {
     if (phase_ == Phase::Playing && !hearts_.isDepleted() && board_ &&
         board_->empty() && escapeHerd_.empty()) {
         phase_ = Phase::Victory;
-        if (progress_.recordCompletion(currentLevel_, hearts_.remaining())) {
+        // Testing unlocked levels must not advance the normal campaign or
+        // mark those levels complete after the cheat is switched off.
+        if (!settings_.cheatModeEnabled() &&
+            progress_.recordCompletion(currentLevel_, hearts_.remaining())) {
             (void)progress_.save();
         }
         if (rootView_) {
@@ -597,6 +851,22 @@ void LevelController::showHint() {
 
     clearHint();
     const std::vector<SheepId> available = board_->escapableSheep();
+    // While the clock runs, help clear the bomb sheep's actual blocker chain.
+    if (bomb_.state == BombSheep::State::Armed && board_->findSheep(bomb_.id)) {
+        SheepId target = bomb_.id;
+        for (std::size_t depth = 0; depth < board_->sheepCount(); ++depth) {
+            const MoveCheck move = board_->inspectMove(target);
+            if (move.canEscape()) {
+                if (!isReacting(target)) {
+                    hintedSheep_ = target;
+                    hintTimeRemaining_ = kHintDuration;
+                }
+                return;
+            }
+            if (move.state != MoveState::Blocked || !move.blocker) { break; }
+            target = *move.blocker;
+        }
+    }
     const auto candidate = std::find_if(available.begin(), available.end(),
         [this](SheepId id) { return !isReacting(id); });
     if (candidate == available.end()) {

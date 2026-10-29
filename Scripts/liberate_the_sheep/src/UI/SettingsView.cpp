@@ -180,9 +180,11 @@ SettingsView::SettingsView(
     MenuLanguage language,
     bool musicEnabled,
     bool immortalModeEnabled,
+    bool cheatModeEnabled,
     LanguageChangedAction languageChanged,
     MusicChangedAction musicChanged,
     ImmortalModeChangedAction immortalModeChanged,
+    CheatModeChangedAction cheatModeChanged,
     Action resetProgress,
     Action back
 )
@@ -356,6 +358,28 @@ SettingsView::SettingsView(
     );
     immortalModeSection->addSubview(immortalModeToggle_);
     card->addSubview(immortalModeSection);
+
+    auto cheatModeSection = makeSettingSection();
+    cheatModeSection->layout().setFlexDirection(PandaUI::FlexDirection::Row);
+    cheatModeSection->layout().setAlignItems(PandaUI::Align::Center);
+    cheatModeSection->layout().setMinHeight(PandaUI::Length::points(56.f));
+    auto cheatModeHeader = makeHeader(text_.cheatModeTitle, text_.cheatModeDescription);
+    cheatModeHeader->layout().setFlexGrow(1.f);
+    cheatModeHeader->layout().setFlexBasis(0.f);
+    cheatModeHeader->layout().setMinWidth(PandaUI::Length::points(0.f));
+    cheatModeSection->addSubview(cheatModeHeader);
+
+    cheatModeToggle_ = std::make_shared<SheepToggle>(cheatModeEnabled);
+    cheatModeToggle_->setTooltip(text_.cheatModeTitle);
+    cheatModeToggle_->setOnValueChanged(
+        [action = std::move(cheatModeChanged)](SheepToggle &toggle) {
+            if (action) {
+                action(toggle.isOn());
+            }
+        }
+    );
+    cheatModeSection->addSubview(cheatModeToggle_);
+    card->addSubview(cheatModeSection);
     card->addSubview(makeDivider());
 
     auto resetSection = makeSettingSection();
@@ -422,6 +446,12 @@ void SettingsView::setMusicEnabled(bool enabled) {
 void SettingsView::setImmortalModeEnabled(bool enabled) {
     if (immortalModeToggle_) {
         immortalModeToggle_->setOn(enabled);
+    }
+}
+
+void SettingsView::setCheatModeEnabled(bool enabled) {
+    if (cheatModeToggle_) {
+        cheatModeToggle_->setOn(enabled);
     }
 }
 

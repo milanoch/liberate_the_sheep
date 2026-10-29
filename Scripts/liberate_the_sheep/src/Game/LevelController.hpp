@@ -44,7 +44,9 @@ public:
 private:
     enum class Phase {
         Loading,
+        Tutorial,
         Playing,
+        BombExplosion,
         Victory,
         Defeat,
         Error,
@@ -65,6 +67,16 @@ private:
         float elapsed{};
     };
 
+    struct BombSheep {
+        enum class State { None, Armed, Rescued, Defused, Exploded };
+        SheepId id{kInvalidSheepId};
+        State state{State::None};
+        float seconds{};
+        bool impact{};
+        int hitsRemaining{};
+        float explosionElapsed{};
+    };
+
     PandaUI::Window window_;
     std::shared_ptr<UI::GameplayRootView> rootView_;
     ProgressStore progress_;
@@ -75,6 +87,10 @@ private:
     Bamboo::EntityHandle cameraEntity_;
     PastureScene pasture_;
     Bamboo::TextureHandle runningSheepTexture_;
+    Bamboo::EntityHandle bombEntity_;
+    PandaUI::TextureHandle bombUiTexture_;
+    PandaUI::TextureHandle standingSheepUiTexture_;
+    BombSheep bomb_;
     std::vector<SheepVisual> sheepVisuals_;
     EscapeHerd escapeHerd_;
     std::vector<BlockedReaction> blockedReactions_;
@@ -100,6 +116,14 @@ private:
     void updateEscapes(float deltaTime);
     void updateBlockedReactions(float deltaTime);
     void updateHint(float deltaTime);
+    void prepareBomb(float seconds, int preferredWave, std::uint64_t seed,
+        int impactHits, int impactPreferredWave);
+    [[nodiscard]] bool hitImpactBomb(SheepId attacker);
+    void startBombLevel();
+    void expireBomb();
+    void updateBombVisual();
+    void updateBombHUD();
+    [[nodiscard]] PandaUI::Point sheepScreenPosition(SheepId id);
     void setSheepFrame(SheepVisual &visual, int pose);
     [[nodiscard]] float escapeRunout() const;
     [[nodiscard]] bool isReacting(SheepId id) const noexcept;

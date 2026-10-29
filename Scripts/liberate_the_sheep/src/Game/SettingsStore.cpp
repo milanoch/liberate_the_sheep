@@ -196,6 +196,10 @@ bool SettingsStore::immortalModeEnabled() const noexcept {
     return m_settings.immortalModeEnabled;
 }
 
+bool SettingsStore::cheatModeEnabled() const noexcept {
+    return m_settings.cheatModeEnabled;
+}
+
 bool SettingsStore::setLanguage(Language language) noexcept {
     if (!isValidLanguage(language) || language == m_settings.language) {
         return false;
@@ -227,6 +231,12 @@ bool SettingsStore::setImmortalModeEnabled(bool enabled) noexcept {
         return false;
     }
     m_settings.immortalModeEnabled = enabled;
+    return true;
+}
+
+bool SettingsStore::setCheatModeEnabled(bool enabled) noexcept {
+    if (enabled == m_settings.cheatModeEnabled) { return false; }
+    m_settings.cheatModeEnabled = enabled;
     return true;
 }
 

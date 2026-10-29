@@ -17,6 +17,7 @@ namespace {
     constexpr std::string_view kTemporarySuffix = ".tmp";
     constexpr std::string_view kBackupSuffix = ".bak";
     constexpr std::uintmax_t kMaximumSaveFileSize = 1024;
+    constexpr std::size_t kLegacyLevelCount = 9;
 
     [[nodiscard]] bool isValid(const ProgressData &progress) noexcept {
         if (progress.highestUnlocked < ProgressStore::kFirstLevel ||
@@ -65,18 +66,46 @@ namespace {
             if (!(input >> magic >> fileVersion >> campaignVersion >> loaded.highestUnlocked)) {
                 return false;
             }
-            for (int &hearts : loaded.bestHearts) {
-                if (!(input >> hearts)) {
+            if (magic != kFileMagic || campaignVersion != ProgressStore::kCampaignVersion ||
+                (fileVersion != 1 && fileVersion != ProgressStore::kFileVersion)) {
+                return false;
+            }
+
+            std::size_t savedLevelCount = kLegacyLevelCount;
+            if (fileVersion == ProgressStore::kFileVersion &&
+                (!(input >> savedLevelCount) || savedLevelCount == 0 ||
+                 savedLevelCount > ProgressStore::kLevelCount)) {
+                return false;
+            }
+            if (loaded.highestUnlocked < ProgressStore::kFirstLevel ||
+                loaded.highestUnlocked > static_cast<int>(savedLevelCount)) {
+                return false;
+            }
+            for (std::size_t index = 0; index < savedLevelCount; ++index) {
+                if (!(input >> loaded.bestHearts[index])) {
                     return false;
                 }
+            }
+            if (fileVersion == ProgressStore::kFileVersion) {
+                int tutorialSeen{};
+                if (!(input >> tutorialSeen) || (tutorialSeen != 0 && tutorialSeen != 1)) {
+                    return false;
+                }
+                loaded.bombTutorialSeen = tutorialSeen != 0;
+            }
+            if (savedLevelCount < ProgressStore::kLevelCount &&
+                loaded.highestUnlocked == static_cast<int>(savedLevelCount) &&
+                loaded.bestHearts[savedLevelCount - 1] > 0) {
+                // Preserve both old nine-level saves and format-2 campaigns
+                // with 24 levels. A completed finale opens its new successor.
+                loaded.highestUnlocked = static_cast<int>(savedLevelCount) + 1;
             }
 
             input >> std::ws;
             if (input.peek() != std::char_traits<char>::eof()) {
                 return false;
             }
-            if (magic != kFileMagic || fileVersion != ProgressStore::kFileVersion ||
-                campaignVersion != ProgressStore::kCampaignVersion || !isValid(loaded)) {
+            if (!isValid(loaded)) {
                 return false;
             }
 
@@ -157,11 +186,12 @@ namespace {
                 }
 
                 output << kFileMagic << ' ' << ProgressStore::kFileVersion << ' '
-                       << ProgressStore::kCampaignVersion << ' ' << progress.highestUnlocked;
+                       << ProgressStore::kCampaignVersion << ' ' << progress.highestUnlocked
+                       << ' ' << ProgressStore::kLevelCount;
                 for (const int hearts : progress.bestHearts) {
                     output << ' ' << hearts;
                 }
-                output << '\n';
+                output << ' ' << (progress.bombTutorialSeen ? 1 : 0) << '\n';
                 output.flush();
                 if (!output) {
                     output.close();
@@ -245,6 +275,14 @@ bool ProgressStore::recordCompletion(int levelNumber, int remainingHearts) noexc
         changed = true;
     }
     return changed;
+}
+
+bool ProgressStore::markBombTutorialSeen() noexcept {
+    if (m_progress.bombTutorialSeen) {
+        return false;
+    }
+    m_progress.bombTutorialSeen = true;
+    return true;
 }
 
 } // namespace LiberateTheSheep::Game

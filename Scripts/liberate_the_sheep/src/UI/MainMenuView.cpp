@@ -28,7 +28,6 @@ public:
         setClipsToBounds(false);
         setFocusable(true);
         setCursor(PandaUI::Cursor::PointingHand);
-        setTooltip(title);
         layout().setWidth(PandaUI::Length::percent(100.f));
         layout().setMaxWidth(PandaUI::Length::points(500.f));
         layout().setHeight(PandaUI::Length::points(216.f));
@@ -161,11 +160,6 @@ protected:
             renderer.drawRect(title);
         }
 
-        if (isFocused()) {
-            body.texture = {};
-            body.color = PandaUI::Color(0xD3E8B8CC);
-            renderer.drawRoundedRectBorder(body, art.size.height * .45f, 2.f);
-        }
     }
 
 private:

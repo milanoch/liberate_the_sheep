@@ -73,6 +73,8 @@ namespace {
                     : "This preference is saved for future audio support.";
         result.immortalModeTitle = text(TextKey::ImmortalMode, language);
         result.immortalModeDescription = text(TextKey::ImmortalModeDescription, language);
+        result.cheatModeTitle = text(TextKey::CheatMode, language);
+        result.cheatModeDescription = text(TextKey::CheatModeDescription, language);
         result.resetTitle = text(TextKey::ResetProgress, language);
         result.resetDescription = text(TextKey::ResetProgressDescription, language);
         result.resetButton = text(TextKey::ResetProgress, language);
@@ -202,7 +204,8 @@ void MenuController::showLevelSelect() {
         progress_.progress().highestUnlocked,
         progress_.progress().bestHearts,
         [this](int levelNumber) { loadLevel(levelNumber); },
-        [this]() { defer([this]() { showMainMenu(); }); }
+        [this]() { defer([this]() { showMainMenu(); }); },
+        settings_.cheatModeEnabled()
     );
     if (rootView_->showPage(std::move(page))) {
         currentPage_ = Page::Levels;
@@ -226,6 +229,7 @@ void MenuController::showSettings() {
         menuLanguage(language),
         settings_.musicEnabled(),
         settings_.immortalModeEnabled(),
+        settings_.cheatModeEnabled(),
         [this](UI::MenuLanguage selectedLanguage) {
             const bool changed = settings_.setLanguage(gameLanguage(selectedLanguage));
             if (changed && !settings_.save()) {
@@ -245,6 +249,11 @@ void MenuController::showSettings() {
                 LOG_WARN("MenuController: failed to save immortal mode setting");
             }
         },
+        [this](bool enabled) {
+            if (settings_.setCheatModeEnabled(enabled) && !settings_.save()) {
+                LOG_WARN("MenuController: failed to save cheat mode setting");
+            }
+        },
         [this]() {
             progress_.reset();
             if (!progress_.save()) {
@@ -253,8 +262,9 @@ void MenuController::showSettings() {
         },
         [this]() { defer([this]() { closeSettings(); }); }
     );
-    // A language change updates the text without replaying the navigation fade.
-    if (rootView_->showPage(std::move(page), !updatingLanguage)) {
+    // Fade between localized pages too, so old and new text never swap abruptly.
+    // The shell keeps the gear and diorama visible throughout the transition.
+    if (rootView_->showPage(std::move(page))) {
         currentPage_ = Page::Settings;
         rootView_->setSettingsTooltip(text(TextKey::Settings, language));
     }
@@ -272,7 +282,8 @@ void MenuController::loadLevel(int levelNumber) {
     if (!canNavigate()) {
         return;
     }
-    if (!progress_.isUnlocked(levelNumber)) {
+    if (levelNumber < ProgressStore::kFirstLevel || levelNumber > ProgressStore::kLastLevel ||
+        (!settings_.cheatModeEnabled() && !progress_.isUnlocked(levelNumber))) {
         LOG_WARN("MenuController: level %d is locked", levelNumber);
         return;
     }

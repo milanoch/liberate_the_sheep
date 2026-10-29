@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Game/LevelCatalog.hpp"
+
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -8,19 +10,21 @@ namespace LiberateTheSheep::Game {
 
 struct ProgressData final {
     int highestUnlocked{1};
-    std::array<int, 9> bestHearts{};
+    std::array<int, kCampaignLevelCount> bestHearts{};
+    bool bombTutorialSeen{};
 };
 
 class ProgressStore final {
 public:
     static constexpr int kFirstLevel = 1;
-    static constexpr int kLastLevel = 9;
-    static constexpr std::size_t kLevelCount = 9;
+    static constexpr int kLastLevel = kCampaignLevelCount;
+    static constexpr std::size_t kLevelCount = kCampaignLevelCount;
     static constexpr int kMaximumHearts = 3;
 
-    // File format and campaign revisions are deliberately independent. Changing
-    // the generated campaign invalidates progress without requiring a new parser.
-    static constexpr std::uint32_t kFileVersion = 1;
+    // Appending levels preserves the campaign revision and old completions.
+    // Format 2 stores its own level count, so shorter campaigns can migrate
+    // without discarding their completions. The tutorial flag is legacy data.
+    static constexpr std::uint32_t kFileVersion = 2;
     static constexpr std::uint32_t kCampaignVersion = 1;
 
     ProgressStore() noexcept = default;
@@ -39,6 +43,7 @@ public:
     // Records a completed, already-unlocked level and unlocks its successor.
     // Returns true only if the stored progress changed.
     [[nodiscard]] bool recordCompletion(int levelNumber, int remainingHearts) noexcept;
+    [[nodiscard]] bool markBombTutorialSeen() noexcept;
 
 private:
     ProgressData m_progress;

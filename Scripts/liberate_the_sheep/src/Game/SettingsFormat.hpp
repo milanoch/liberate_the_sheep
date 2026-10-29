@@ -20,20 +20,22 @@ inline constexpr std::string_view kMagic = "LIBERATE_THE_SHEEP_SETTINGS";
         std::string language;
         std::string music;
         std::string immortal{"0"};
+        std::string cheat{"0"};
         if (!(input >> magic >> version >> language >> music)) {
             return false;
         }
-        if (magic != kMagic || (version != "1" && version != "2")) {
+        if (magic != kMagic || (version != "1" && version != "2" && version != "3")) {
             return false;
         }
-        if (version == "2" && !(input >> immortal)) {
+        if ((version == "2" || version == "3") && !(input >> immortal)) {
             return false;
         }
+        if (version == "3" && !(input >> cheat)) { return false; }
         const auto isBoolean = [](const std::string &value) {
             return value == "0" || value == "1";
         };
         if ((language != "0" && language != "1") || !isBoolean(music) ||
-            !isBoolean(immortal)) {
+            !isBoolean(immortal) || !isBoolean(cheat)) {
             return false;
         }
         input >> std::ws;
@@ -45,6 +47,7 @@ inline constexpr std::string_view kMagic = "LIBERATE_THE_SHEEP_SETTINGS";
             language == "0" ? Language::Russian : Language::English,
             music == "1",
             immortal == "1",
+            cheat == "1",
         };
         return true;
     } catch (...) {
@@ -60,7 +63,8 @@ inline constexpr std::string_view kMagic = "LIBERATE_THE_SHEEP_SETTINGS";
         output << kMagic << ' ' << SettingsStore::kFileVersion << ' '
                << static_cast<unsigned int>(settings.language) << ' '
                << (settings.musicEnabled ? 1 : 0) << ' '
-               << (settings.immortalModeEnabled ? 1 : 0) << '\n';
+               << (settings.immortalModeEnabled ? 1 : 0) << ' '
+               << (settings.cheatModeEnabled ? 1 : 0) << '\n';
         return static_cast<bool>(output);
     } catch (...) {
         return false;

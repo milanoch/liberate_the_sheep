@@ -12,7 +12,7 @@ struct LevelSelectText {
     std::string title = "LEVELS";
     // Retained for existing localized callers; tiles now show numbers and
     // native check/lock badges, without subtitles or heart counters.
-    std::string subtitle = "Three field sizes, nine deterministic puzzles.";
+    std::string subtitle = "39 pasture puzzles. Timed and impact bomb sheep await.";
     std::string levelPrefix = "LEVEL";
     std::string locked = "LOCKED";
     std::string ready = "READY";
@@ -30,7 +30,8 @@ public:
         int highestUnlocked,
         std::span<const int> bestHearts,
         LevelAction playLevel,
-        Action back
+        Action back,
+        bool allLevelsUnlocked = false
     );
 
     // Transitional overload for callers that have not selected a language yet.
