@@ -8,11 +8,29 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace LiberateTheSheep::UI {
 
 class BombSheepPicture;
 class BombFieldOverlay;
+class RescueNoticeView;
+
+struct BombDisplay {
+    PandaUI::Point center{};
+    float size{};
+    float rotationDegrees{};
+    int value{};
+    bool impact{};
+};
+
+struct BombHUDState {
+    float seconds{};
+    int hits{};
+    bool impact{};
+    bool rescued{};
+    bool defused{};
+};
 
 struct GameplayText {
     std::string levelStat = "LEVEL";
@@ -29,6 +47,8 @@ struct GameplayText {
     std::string defeatTitle = "THE SHEEP NEED YOU";
     std::string defeatMessage =
         "Try the same field again and look for a clear lane first.";
+    std::string loadErrorTitle = "COULD NOT PREPARE LEVEL";
+    std::string loadErrorMessage = "Try loading this level again or return to the menu.";
     std::string nextLevelButton = "NEXT LEVEL";
     std::string replayButton = "REPLAY";
 
@@ -47,6 +67,9 @@ struct GameplayText {
     std::string impactBombHits = "HITS UNTIL EXPLOSION";
     std::string impactBombExpired = "THE BOMB WAS HIT";
     std::string impactBombDefeatMessage;
+    std::string dogRescueTitle = "SHEEPDOG TO THE RESCUE";
+    std::string dogRescueMessage =
+        "Immortal mode is on. The sheepdog will take the bomb away from the flock.";
 };
 
 class GameplayRootView final : public PassThroughPanel {
@@ -74,18 +97,24 @@ public:
 
     void showVictory(int heartsRemaining, bool hasNextLevel = true);
     void showDefeat();
+    void showLoadError();
     void hideResult();
     void setBoardInputEnabled(bool enabled);
 
     void setBombArtwork(PandaUI::TextureHandle sheepAtlas, PandaUI::TextureHandle bomb);
-    void showBombTutorial(bool immortal, float seconds, int coat, bool impact = false, int hits = 0);
+    void showBombTutorial(bool immortal, float seconds, int coat, bool impact = false, int hits = 0,
+                          int bombCount = 1);
     void hideBombTutorial();
     void updateBombTimer(float seconds, bool visible, bool rescued, bool defused, bool immortal,
                          bool impact = false, int hits = 0);
     void setBombMarker(PandaUI::Point center, float bombSize, float rotationDegrees,
                        int seconds, bool visible, bool impact = false);
+    void setBombMarkers(const std::vector<BombDisplay> &displays);
+    void updateBombStatus(const std::vector<BombHUDState> &bombs, bool immortal);
     void playBombBurst(PandaUI::Point center, bool harmless);
     void showBombDefeat(bool impact = false);
+    void showDogRescueNotice();
+    void hideDogRescueNotice();
 
     [[nodiscard]] std::shared_ptr<BoardInputView> boardInputView() const;
 
@@ -107,7 +136,9 @@ private:
     std::shared_ptr<PandaUI::Button> nextButton_;
     std::shared_ptr<PandaUI::Button> replayButton_;
     std::shared_ptr<PandaUI::Label> bombTimerLabel_;
+    float bombTimerFontSize_{12.f};
     std::shared_ptr<BombFieldOverlay> bombFieldOverlay_;
+    std::shared_ptr<RescueNoticeView> dogRescueNotice_;
     std::shared_ptr<PandaUI::Panel> bombTutorial_;
     std::shared_ptr<BombSheepPicture> bombPicture_;
     std::shared_ptr<PandaUI::Label> bombTitleLabel_;

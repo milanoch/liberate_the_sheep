@@ -1,0 +1,152 @@
+{
+  "anchors" : [
+    {
+      "cropBottom" : 4,
+      "scale" : 0.67000000000000004,
+      "sourceColumns" : 4,
+      "sourceFrame" : 0,
+      "sourcePath" : "SourceArt\/Characters\/shepherd_dog_run_v4_source.png",
+      "x" : 163.69,
+      "y" : 10
+    },
+    {
+      "cropBottom" : 4,
+      "scale" : 0.67000000000000004,
+      "sourceColumns" : 4,
+      "sourceFrame" : 1,
+      "sourcePath" : "SourceArt\/Characters\/shepherd_dog_run_v4_source.png",
+      "x" : 160.16999999999999,
+      "y" : 10
+    },
+    {
+      "cropBottom" : 4,
+      "scale" : 0.67000000000000004,
+      "sourceColumns" : 4,
+      "sourceFrame" : 2,
+      "sourcePath" : "SourceArt\/Characters\/shepherd_dog_run_v4_source.png",
+      "x" : 157.56,
+      "y" : 10
+    },
+    {
+      "cropBottom" : 4,
+      "scale" : 0.67000000000000004,
+      "sourceColumns" : 4,
+      "sourceFrame" : 3,
+      "sourcePath" : "SourceArt\/Characters\/shepherd_dog_run_v4_source.png",
+      "x" : 155.74000000000001,
+      "y" : 9
+    },
+    {
+      "cropBottom" : 4,
+      "scale" : 0.67000000000000004,
+      "sourceColumns" : 4,
+      "sourceFrame" : 4,
+      "sourcePath" : "SourceArt\/Characters\/shepherd_dog_run_v4_source.png",
+      "x" : 163.58000000000001,
+      "y" : 5
+    },
+    {
+      "cropBottom" : 4,
+      "scale" : 0.67000000000000004,
+      "sourceColumns" : 4,
+      "sourceFrame" : 5,
+      "sourcePath" : "SourceArt\/Characters\/shepherd_dog_run_v4_source.png",
+      "x" : 160.94,
+      "y" : 6
+    },
+    {
+      "cropBottom" : 4,
+      "scale" : 0.67000000000000004,
+      "sourceColumns" : 4,
+      "sourceFrame" : 6,
+      "sourcePath" : "SourceArt\/Characters\/shepherd_dog_run_v4_source.png",
+      "x" : 157.88,
+      "y" : 6
+    },
+    {
+      "cropBottom" : 4,
+      "scale" : 0.67000000000000004,
+      "sourceColumns" : 4,
+      "sourceFrame" : 7,
+      "sourcePath" : "SourceArt\/Characters\/shepherd_dog_run_v4_source.png",
+      "x" : 154.94999999999999,
+      "y" : 5
+    },
+    {
+      "cropBottom" : 4,
+      "scale" : 0.67000000000000004,
+      "sourceColumns" : 4,
+      "sourceFrame" : 8,
+      "sourcePath" : "SourceArt\/Characters\/shepherd_dog_run_v4_source.png",
+      "x" : 164.75,
+      "y" : 5
+    },
+    {
+      "cropBottom" : 4,
+      "scale" : 0.67000000000000004,
+      "sourceColumns" : 4,
+      "sourceFrame" : 9,
+      "sourcePath" : "SourceArt\/Characters\/shepherd_dog_run_v4_source.png",
+      "x" : 160,
+      "y" : 4
+    },
+    {
+      "cropBottom" : 4,
+      "scale" : 0.67000000000000004,
+      "sourceColumns" : 4,
+      "sourceFrame" : 10,
+      "sourcePath" : "SourceArt\/Characters\/shepherd_dog_run_v4_source.png",
+      "x" : 158.27000000000001,
+      "y" : 3
+    },
+    {
+      "cropBottom" : 4,
+      "scale" : 0.67000000000000004,
+      "sourceColumns" : 4,
+      "sourceFrame" : 11,
+      "sourcePath" : "SourceArt\/Characters\/shepherd_dog_run_v4_source.png",
+      "x" : 156.59,
+      "y" : 2
+    },
+    {
+      "cropBottom" : 0,
+      "scale" : 0.35999999999999999,
+      "sourceColumns" : 2,
+      "sourceFrame" : 0,
+      "sourcePath" : "SourceArt\/Characters\/shepherd_dog_tail_return_v4_source.png",
+      "x" : 366.47000000000003,
+      "y" : 31
+    },
+    {
+      "cropBottom" : 0,
+      "scale" : 0.35999999999999999,
+      "sourceColumns" : 2,
+      "sourceFrame" : 1,
+      "sourcePath" : "SourceArt\/Characters\/shepherd_dog_tail_return_v4_source.png",
+      "x" : 261.73000000000002,
+      "y" : 33
+    },
+    {
+      "cropBottom" : 0,
+      "scale" : 0.35999999999999999,
+      "sourceColumns" : 2,
+      "sourceFrame" : 2,
+      "sourcePath" : "SourceArt\/Characters\/shepherd_dog_tail_return_v4_source.png",
+      "x" : 369.81999999999999,
+      "y" : 15
+    },
+    {
+      "cropBottom" : 0,
+      "scale" : 0.35999999999999999,
+      "sourceColumns" : 2,
+      "sourceFrame" : 3,
+      "sourcePath" : "SourceArt\/Characters\/shepherd_dog_tail_return_v4_source.png",
+      "x" : 259.73000000000002,
+      "y" : 15
+    }
+  ],
+  "registrationMethod" : "Central muzzle silhouette alpha>=220; centroid over first 5 source rows (4x4) or 10 rows (2x2). Uniform 0.67 scale for first twelve poses, uniform 0.36 for the four double-resolution return poses. Crop bottom four source pixels from each 4x4 cell to exclude next-row muzzle fragments; retain original pixel geometry. No pose scales derived from moving tail bounds.",
+  "scale" : 0.67000000000000004,
+  "targetX" : 128,
+  "targetY" : 36
+}

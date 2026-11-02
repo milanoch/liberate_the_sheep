@@ -204,7 +204,7 @@ void MenuShellView::update(double deltaTime) {
         // Never destroy a page while the UI hierarchy is being traversed.
         const auto weak = weak_from_this();
         getContext()->postDeferred([weak]() {
-            if (const auto shell = weak.lock()) {
+            if (const auto shell = std::static_pointer_cast<MenuShellView>(weak.lock())) {
                 shell->finishTransition();
             }
         });

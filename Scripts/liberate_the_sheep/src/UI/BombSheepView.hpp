@@ -2,7 +2,11 @@
 
 #include <PandaUI/PandaUI.hpp>
 
+#include <vector>
+
 namespace LiberateTheSheep::UI {
+
+struct BombDisplay;
 
 // Uses the same registered sheep and bomb art as the field. The controller
 // owns the UI texture copies and keeps them alive until the root view is gone.
@@ -30,8 +34,10 @@ private:
 class BombFieldOverlay final : public PandaUI::View {
 public:
     BombFieldOverlay();
+    ~BombFieldOverlay() override;
     void setMarker(PandaUI::Point center, float bombSize, float rotationDegrees,
                    int seconds, bool visible, bool impact = false);
+    void setMarkers(const std::vector<BombDisplay> &displays);
     void playBurst(PandaUI::Point center, bool harmless);
     void reset();
     void update(double deltaTime) override;
@@ -40,12 +46,7 @@ protected:
     void draw(float, float) override;
 
 private:
-    PandaUI::Point displayCenter_;
-    float displaySize_{};
-    float displayRotation_{};
-    int displayedSeconds_{};
-    bool displayVisible_{};
-    bool displayImpact_{};
+    std::vector<BombDisplay> displays_;
     PandaUI::Point burstCenter_;
     float burstElapsed_{1.f};
     bool harmless_{};

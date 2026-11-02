@@ -1,0 +1,74 @@
+{
+  "anchors" : [
+    {
+      "sourceFrame" : 0,
+      "x" : 168.72,
+      "y" : 11
+    },
+    {
+      "sourceFrame" : 1,
+      "x" : 171.5,
+      "y" : 12
+    },
+    {
+      "sourceFrame" : 2,
+      "x" : 161.88,
+      "y" : 26
+    },
+    {
+      "sourceFrame" : 3,
+      "x" : 167.63999999999999,
+      "y" : 12
+    },
+    {
+      "sourceFrame" : 4,
+      "x" : 167.09999999999999,
+      "y" : 12
+    },
+    {
+      "sourceFrame" : 5,
+      "x" : 168.53999999999999,
+      "y" : 11
+    },
+    {
+      "sourceFrame" : 6,
+      "x" : 163.72999999999999,
+      "y" : 18
+    },
+    {
+      "sourceFrame" : 7,
+      "x" : 166.5,
+      "y" : 11
+    },
+    {
+      "sourceFrame" : 8,
+      "x" : 160.91,
+      "y" : 7
+    },
+    {
+      "sourceFrame" : 9,
+      "x" : 166.62,
+      "y" : 7
+    },
+    {
+      "sourceFrame" : 10,
+      "x" : 164.09,
+      "y" : 6
+    },
+    {
+      "sourceFrame" : 11,
+      "x" : 169.87,
+      "y" : 7
+    },
+    {
+      "sourceFrame" : 12,
+      "x" : 163.75,
+      "y" : 2
+    }
+  ],
+  "registrationMethod" : "First central muzzle row with at least three alpha>=220 pixels; X is the centroid of the first five opaque muzzle rows. Uniform scale 0.67 matches the approved run import.",
+  "scale" : 0.67000000000000004,
+  "source" : "SourceArt\/Characters\/shepherd_dog_actions_v3_source.png",
+  "targetX" : 128,
+  "targetY" : 36
+}

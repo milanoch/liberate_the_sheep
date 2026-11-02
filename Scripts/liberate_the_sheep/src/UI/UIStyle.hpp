@@ -20,6 +20,11 @@ namespace Colors {
 [[nodiscard]] PandaUI::Color cardSoft();
 [[nodiscard]] PandaUI::Color menuCard();
 [[nodiscard]] PandaUI::Color scrim();
+[[nodiscard]] PandaUI::Color border();
+[[nodiscard]] PandaUI::Color focus();
+[[nodiscard]] PandaUI::Color control();
+[[nodiscard]] PandaUI::Color controlHover();
+[[nodiscard]] PandaUI::Color controlPressed();
 
 } // namespace Colors
 
@@ -50,6 +55,15 @@ public:
     std::string title,
     PandaUI::ButtonStyle style = PandaUI::ButtonStyle::Neutral,
     float height = 52.f
+);
+
+// Per-instance game skin: never changes the editor's theme or widget defaults.
+[[nodiscard]] PandaUI::ButtonAppearance gameButtonAppearance(
+    PandaUI::ButtonStyle style = PandaUI::ButtonStyle::Neutral, float height = 52.f
+);
+void applyGameButtonStyle(
+    PandaUI::Button &button,
+    PandaUI::ButtonStyle style = PandaUI::ButtonStyle::Neutral, float height = 52.f
 );
 
 [[nodiscard]] std::shared_ptr<PandaUI::Panel> makeCard(float maxWidth = 520.f);

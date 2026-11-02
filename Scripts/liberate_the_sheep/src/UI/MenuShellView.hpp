@@ -9,8 +9,7 @@
 namespace LiberateTheSheep::UI {
 
 // The menu scene and gear stay visible while the page content fades in place.
-class MenuShellView final : public PandaUI::Panel,
-                            public std::enable_shared_from_this<MenuShellView> {
+class MenuShellView final : public PandaUI::Panel {
 public:
     MenuShellView(PandaUI::TextureHandle settingsIcon, std::function<void()> settings);
 

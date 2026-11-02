@@ -1,5 +1,6 @@
 #include "UI/GameplayRootView.hpp"
 #include "UI/BombSheepView.hpp"
+#include "UI/RescueNoticeView.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -31,14 +32,16 @@ namespace {
             std::move(caption),
             10.f,
             PandaUI::FontWeight::Bold,
-            PandaUI::Color(0xAEB9ACFF),
+            Colors::mutedCream(),
             1,
             PandaUI::TextAlignment::Center
         );
-        captionLabel->setLetterSpacing(0.9f);
+        captionLabel->setLetterSpacing(0.7f);
         stat->addSubview(captionLabel);
 
         valueLabel->layout().setWidth(PandaUI::Length::percent(100.f));
+        valueLabel->setTextShadow(PandaUI::TextShadow(
+            PandaUI::Point(0.f, 1.f), PandaUI::Color(0x00000030)));
         stat->addSubview(std::move(valueLabel));
         return stat;
     }
@@ -71,6 +74,10 @@ GameplayRootView::GameplayRootView(Callbacks callbacks, GameplayText text, bool 
     addSubview(bombFieldOverlay_);
 
     addSubview(makeHud(callbacks));
+
+    dogRescueNotice_ = std::make_shared<RescueNoticeView>(
+        text_.dogRescueTitle, text_.dogRescueMessage);
+    addSubview(dogRescueNotice_);
 
     resultOverlay_ = makeResultOverlay(callbacks);
     resultOverlay_->setHidden(true);
@@ -118,10 +125,11 @@ void GameplayRootView::updateHUD(int levelNumber, int hearts, int sheepLeft) {
 }
 
 void GameplayRootView::showVictory(int heartsRemaining, bool hasNextLevel) {
+    hideDogRescueNotice();
     setBoardInputEnabled(false);
     if (resultEyebrowLabel_) {
         resultEyebrowLabel_->setText(text_.fieldCleared);
-        resultEyebrowLabel_->setTextColor(Colors::meadow());
+        resultEyebrowLabel_->setTextColor(Colors::sunlight());
     }
     if (resultTitleLabel_) {
         resultTitleLabel_->setText(text_.victoryTitle);
@@ -138,9 +146,9 @@ void GameplayRootView::showVictory(int heartsRemaining, bool hasNextLevel) {
         nextButton_->setEnabled(hasNextLevel);
     }
     if (replayButton_) {
-        replayButton_->setStyle(
-            hasNextLevel ? PandaUI::ButtonStyle::AccentOutline : PandaUI::ButtonStyle::Accent
-        );
+        applyGameButtonStyle(*replayButton_,
+            hasNextLevel ? PandaUI::ButtonStyle::AccentOutline : PandaUI::ButtonStyle::Accent,
+            52.f);
     }
     if (resultOverlay_) {
         resultOverlay_->setHidden(false);
@@ -148,6 +156,7 @@ void GameplayRootView::showVictory(int heartsRemaining, bool hasNextLevel) {
 }
 
 void GameplayRootView::showDefeat() {
+    hideDogRescueNotice();
     setBoardInputEnabled(false);
     if (resultEyebrowLabel_) {
         resultEyebrowLabel_->setText(text_.noHeartsLeft);
@@ -164,14 +173,24 @@ void GameplayRootView::showDefeat() {
         nextButton_->setEnabled(false);
     }
     if (replayButton_) {
-        replayButton_->setStyle(PandaUI::ButtonStyle::Accent);
+        applyGameButtonStyle(*replayButton_, PandaUI::ButtonStyle::Accent, 52.f);
     }
     if (resultOverlay_) {
         resultOverlay_->setHidden(false);
     }
 }
 
+void GameplayRootView::showLoadError() {
+    // Reuse retry/menu actions, but never report a loading failure as lost lives.
+    showDefeat();
+    resultEyebrowLabel_->setText(text_.levelStat + " " + levelLabel_->getText());
+    resultEyebrowLabel_->setTextColor(Colors::mutedCream());
+    resultTitleLabel_->setText(text_.loadErrorTitle);
+    resultMessageLabel_->setText(text_.loadErrorMessage);
+}
+
 void GameplayRootView::hideResult() {
+    hideDogRescueNotice();
     if (resultOverlay_) {
         resultOverlay_->setHidden(true);
     }
@@ -184,9 +203,12 @@ void GameplayRootView::setBombArtwork(PandaUI::TextureHandle sheepAtlas,
 }
 
 void GameplayRootView::showBombTutorial(bool immortal, float seconds, int coat,
-                                        bool impact, int hits) {
+                                        bool impact, int hits, int bombCount) {
+    hideDogRescueNotice();
     setBoardInputEnabled(false);
-    bombTitleLabel_->setText(impact ? text_.impactBombTitle : text_.bombTitle);
+    std::string title = impact ? text_.impactBombTitle : text_.bombTitle;
+    if (bombCount > 1) { title += " × " + std::to_string(bombCount); }
+    bombTitleLabel_->setText(title);
     bombInstructionsLabel_->setText(impact ? text_.impactBombInstructions : text_.bombInstructions);
     bombImmortalLabel_->setText(impact ? text_.impactBombImmortalInstructions
                                      : text_.bombImmortalInstructions);
@@ -196,8 +218,7 @@ void GameplayRootView::showBombTutorial(bool immortal, float seconds, int coat,
     bombImmortalLabel_->setHidden(!immortal);
     bombImmortalLabel_->layout().setDisplay(immortal ? PandaUI::Display::Flex
                                                   : PandaUI::Display::None);
-    bombStartButton_->setText(impact ? text_.bombStart
-                                    : text_.bombStart + "  ·  " + countdown(seconds));
+    bombStartButton_->setText(text_.bombStart);
     bombStartButton_->setEnabled(true);
     bombTutorial_->setHidden(false);
 }
@@ -228,6 +249,63 @@ void GameplayRootView::setBombMarker(PandaUI::Point center, float bombSize,
     bombFieldOverlay_->setMarker(center, bombSize, rotationDegrees, seconds, visible, impact);
 }
 
+void GameplayRootView::setBombMarkers(const std::vector<BombDisplay> &displays) {
+    bombFieldOverlay_->setMarkers(displays);
+}
+
+void GameplayRootView::updateBombStatus(const std::vector<BombHUDState> &bombs, bool immortal) {
+    if (bombs.size() == 1) {
+        const auto &bomb = bombs.front();
+        updateBombTimer(bomb.seconds, true, bomb.rescued, bomb.defused, immortal,
+                        bomb.impact, bomb.hits);
+        if (bombTimerFontSize_ != 12.f) {
+            bombTimerFontSize_ = 12.f;
+            bombTimerLabel_->setFont(PandaUI::Font(12.f, PandaUI::FontWeight::Bold));
+        }
+        return;
+    }
+    const bool visible = !bombs.empty();
+    bombTimerLabel_->setHidden(!visible);
+    bombTimerLabel_->layout().setDisplay(visible ? PandaUI::Display::Flex : PandaUI::Display::None);
+    if (!visible) { return; }
+
+    std::string timed;
+    std::string counters;
+    bool urgent = false;
+    bool allSafe = true;
+    for (const auto &bomb : bombs) {
+        // Stable controller order keeps each independent counter in the same
+        // slot. A check denotes a rescued sheep; a circle denotes a bomb taken
+        // away by the sheepdog in immortal mode.
+        const bool safe = bomb.rescued || bomb.defused;
+        allSafe = allSafe && safe;
+        const std::string value = bomb.rescued ? "✓" : bomb.defused ? "○"
+            : bomb.impact ? std::to_string(std::max(0, bomb.hits)) : countdown(bomb.seconds);
+        urgent = urgent || (!safe && (bomb.impact ? bomb.hits <= 1 : bomb.seconds <= 10.f));
+        if (bomb.impact) {
+            if (!counters.empty()) { counters += " / "; }
+            counters += value;
+        } else {
+            if (!timed.empty()) { timed += " / "; }
+            timed += value;
+        }
+    }
+    std::string value;
+    if (!timed.empty()) { value = text_.bombTimer + " " + timed; }
+    if (!counters.empty()) {
+        if (!value.empty()) { value += " · "; }
+        value += text_.impactBombHits + " " + counters;
+    }
+    if (immortal) { value += " ∞"; }
+    if (bombTimerLabel_->getText() != value) { bombTimerLabel_->setText(value); }
+    // Both groups fit one existing HUD row even on compact portrait screens.
+    if (bombTimerFontSize_ != 10.f) {
+        bombTimerFontSize_ = 10.f;
+        bombTimerLabel_->setFont(PandaUI::Font(10.f, PandaUI::FontWeight::Bold));
+    }
+    bombTimerLabel_->setTextColor(allSafe ? Colors::meadow() : urgent ? Colors::danger() : Colors::cream());
+}
+
 void GameplayRootView::playBombBurst(PandaUI::Point center, bool harmless) {
     bombFieldOverlay_->playBurst(center, harmless);
 }
@@ -236,6 +314,14 @@ void GameplayRootView::showBombDefeat(bool impact) {
     showDefeat();
     resultEyebrowLabel_->setText(impact ? text_.impactBombExpired : text_.bombExpired);
     resultMessageLabel_->setText(impact ? text_.impactBombDefeatMessage : text_.bombDefeatMessage);
+}
+
+void GameplayRootView::showDogRescueNotice() {
+    dogRescueNotice_->show();
+}
+
+void GameplayRootView::hideDogRescueNotice() {
+    if (dogRescueNotice_) { dogRescueNotice_->dismiss(); }
 }
 
 void GameplayRootView::setBoardInputEnabled(bool enabled) {
@@ -267,6 +353,7 @@ std::shared_ptr<PandaUI::Panel> GameplayRootView::makeHud(Callbacks &callbacks) 
     hudCard->layout().setPadding(PandaUI::Edge::Vertical, 8.f);
     hudCard->layout().setGap(6.f);
     hudCard->surface().setCornerRadius(20.f);
+    hudCard->surface().setShadow(PandaUI::Shadow::popover);
 
     auto stats = std::make_shared<PandaUI::Panel>();
     stats->setBackgroundColor(Colors::transparent());
@@ -349,7 +436,7 @@ std::shared_ptr<PandaUI::Panel> GameplayRootView::makeResultOverlay(Callbacks &c
         text_.fieldCleared,
         12.f,
         PandaUI::FontWeight::Bold,
-        Colors::meadow(),
+        Colors::sunlight(),
         1,
         PandaUI::TextAlignment::Center
     );
@@ -366,6 +453,8 @@ std::shared_ptr<PandaUI::Panel> GameplayRootView::makeResultOverlay(Callbacks &c
         PandaUI::TextAlignment::Center
     );
     resultTitleLabel_->layout().setWidth(PandaUI::Length::percent(100.f));
+    resultTitleLabel_->setTextShadow(PandaUI::TextShadow(
+        PandaUI::Point(0.f, 2.f), PandaUI::Color(0x00000038)));
     card->addSubview(resultTitleLabel_);
 
     resultMessageLabel_ = makeLabel(
@@ -402,7 +491,7 @@ std::shared_ptr<PandaUI::Panel> GameplayRootView::makeResultOverlay(Callbacks &c
 
 std::shared_ptr<PandaUI::Panel> GameplayRootView::makeBombTutorial(Callbacks &callbacks) {
     auto overlay = std::make_shared<PandaUI::Panel>();
-    overlay->setBackgroundColor(PandaUI::Color(0x101010B8));
+    overlay->setBackgroundColor(Colors::scrim());
     overlay->layoutSetAbsolute();
     overlay->layout().setPosition(PandaUI::Edge::Left, PandaUI::Length::points(0.f));
     overlay->layout().setPosition(PandaUI::Edge::Top, PandaUI::Length::points(0.f));
@@ -437,7 +526,6 @@ std::shared_ptr<PandaUI::Panel> GameplayRootView::makeBombTutorial(Callbacks &ca
     };
     scroll->addContentSubview(spacer());
     auto card = makeCard(440.f);
-    card->setBackgroundColor(PandaUI::Color(0x242424F5));
     card->layout().setFlexShrink(0.f);
     card->layout().setPadding(PandaUI::Edge::All, 18.f);
     card->layout().setGap(12.f);
@@ -445,19 +533,21 @@ std::shared_ptr<PandaUI::Panel> GameplayRootView::makeBombTutorial(Callbacks &ca
     bombTitleLabel_ = makeLabel(text_.bombTitle, 23.f, PandaUI::FontWeight::Bold,
                            Colors::cream(), 2, PandaUI::TextAlignment::Center);
     bombTitleLabel_->layout().setWidth(PandaUI::Length::percent(100.f));
+    bombTitleLabel_->setTextShadow(PandaUI::TextShadow(
+        PandaUI::Point(0.f, 1.f), PandaUI::Color(0x00000030)));
     card->addSubview(bombTitleLabel_);
     bombPicture_ = std::make_shared<BombSheepPicture>();
     card->addSubview(bombPicture_);
 
     bombInstructionsLabel_ = makeLabel(text_.bombInstructions, 15.f,
-        PandaUI::FontWeight::Regular, PandaUI::Color(0xE7E7E7FF), 0,
+        PandaUI::FontWeight::Regular, Colors::mutedCream(), 0,
         PandaUI::TextAlignment::Center);
     bombInstructionsLabel_->layout().setWidth(PandaUI::Length::percent(100.f));
     bombInstructionsLabel_->setLineSpacing(3.f);
     card->addSubview(bombInstructionsLabel_);
 
     bombImmortalLabel_ = makeLabel(text_.bombImmortalInstructions, 14.f,
-        PandaUI::FontWeight::Regular, PandaUI::Color(0xB8DDAEFF), 0,
+        PandaUI::FontWeight::Regular, Colors::sunlight(), 0,
         PandaUI::TextAlignment::Center);
     bombImmortalLabel_->layout().setWidth(PandaUI::Length::percent(100.f));
     bombImmortalLabel_->setLineSpacing(2.f);

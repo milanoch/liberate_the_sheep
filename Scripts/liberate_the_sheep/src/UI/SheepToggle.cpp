@@ -1,4 +1,5 @@
 #include "UI/SheepToggle.hpp"
+#include "UI/UIStyle.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -101,12 +102,11 @@ void SheepToggle::themeChanged() {
 }
 
 void SheepToggle::refreshAppearance() {
-    const auto &theme = PandaUI::theme();
     const auto next = !isEnabled() ? PandaUI::Color(0x454545FF)
-        : isOn() ? (isHighlighted() ? theme.accentPressed
-                    : isHovered() ? theme.accentHover : theme.accent)
-        : isHighlighted() ? PandaUI::Color(0x454545FF)
-        : isHovered() ? PandaUI::Color(0x626262FF) : PandaUI::Color(0x555555FF);
+        : isOn() ? (isHighlighted() ? PandaUI::Color(0xBD9452FF)
+                    : isHovered() ? PandaUI::Color(0xF8DDA1FF) : Colors::sunlight())
+        : isHighlighted() ? PandaUI::Color(0x383735FF)
+        : isHovered() ? PandaUI::Color(0x66615AFF) : PandaUI::Color(0x514E48FF);
     if (!sameColor(next, targetTrack_)) {
         startTrack_ = track_;
         targetTrack_ = next;
@@ -178,11 +178,11 @@ void SheepToggle::draw(float, float) {
     outline.center = {52.f, 26.f, 0.f};
     outline.size = {96.f, 38.f};
     outline.transform = transform;
-    outline.color = PandaUI::Color(0xFFFFFF24);
+    outline.color = Colors::border();
     renderer.drawRoundedRectBorder(outline, 19.f, 1.f);
     if (isFocused()) {
         outline.size = {102.f, 44.f};
-        outline.color = isEnabled() ? PandaUI::theme().focusRing : PandaUI::Color(0xB0B0B0FF);
+        outline.color = isEnabled() ? Colors::focus() : Colors::mutedCream();
         renderer.drawRoundedRectBorder(outline, 22.f, 1.5f);
     }
 
@@ -192,9 +192,9 @@ void SheepToggle::draw(float, float) {
         glm::translate(transform, glm::vec3(sheepX, 25.f - hop_, 0.f)), tilt_,
         glm::vec3(0.f, 0.f, 1.f)
     );
-    const auto wool = isEnabled() ? PandaUI::Color(0xFFFFFFFF) : PandaUI::Color(0xC9CBCDFF);
-    const auto fleeceShade = isEnabled() ? PandaUI::Color(0xE4E8EBFF) : PandaUI::Color(0xAFB2B5FF);
-    const auto face = isEnabled() ? PandaUI::Color(0x444B55FF) : PandaUI::Color(0x686C72FF);
+    const auto wool = isEnabled() ? Colors::cream() : PandaUI::Color(0xC9C3B8FF);
+    const auto fleeceShade = isEnabled() ? PandaUI::Color(0xE6DCC8FF) : PandaUI::Color(0xAEA89EFF);
+    const auto face = isEnabled() ? PandaUI::Color(0x514A40FF) : PandaUI::Color(0x706B63FF);
 
     part(-10.f, 9.f, 3.5f, 10.f, 1.7f, face, -.08f);
     part(4.f, 9.f, 3.5f, 10.f, 1.7f, face, .08f);

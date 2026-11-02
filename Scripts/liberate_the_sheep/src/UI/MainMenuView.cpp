@@ -42,7 +42,7 @@ public:
         }
         label_ = makeLabel(
             std::move(title), 30.f, PandaUI::FontWeight::Bold,
-            PandaUI::Color(0x4E6240FF), 1, PandaUI::TextAlignment::Center
+            Colors::ink(), 1, PandaUI::TextAlignment::Center
         );
         label_->setHidden(artwork_ && titleRegion_.size.width > 0.f);
         label_->setUserInteractionEnabled(false);
@@ -77,8 +77,7 @@ public:
 protected:
     void controlStateChanged(PandaUI::ControlState, PandaUI::ControlState) override {
         if (label_) {
-            label_->setTextColor(isHighlighted() ? PandaUI::Color(0x30482AFF)
-                                                 : PandaUI::Color(0x4E6240FF));
+            label_->setTextColor(Colors::ink());
         }
         setNeedsDisplay();
     }

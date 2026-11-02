@@ -8,7 +8,7 @@
 
 namespace LiberateTheSheep::Game {
 
-inline constexpr int kCampaignLevelCount = 39;
+inline constexpr int kCampaignLevelCount = 40;
 
 struct LevelDefinition {
     int number{};
@@ -21,6 +21,7 @@ struct LevelDefinition {
     // sheep hits them as the nearest blocker; zero disables this mechanic.
     int impactBombHits{};
     int impactBombPreferredWave{2};
+    int impactBombCount{1};
 };
 
 [[nodiscard]] std::span<const LevelDefinition> levelCatalog() noexcept;

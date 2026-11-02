@@ -7,8 +7,7 @@
 
 namespace LiberateTheSheep::UI {
 
-class SheepToggle final : public PandaUI::Control,
-                          public std::enable_shared_from_this<SheepToggle> {
+class SheepToggle final : public PandaUI::Control {
 public:
     using ValueChangedCallback = std::function<void(SheepToggle &)>;
 

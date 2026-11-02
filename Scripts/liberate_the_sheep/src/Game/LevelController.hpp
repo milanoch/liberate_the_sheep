@@ -8,6 +8,7 @@
 #include "Game/PenEscapePath.hpp"
 #include "Game/ProgressStore.hpp"
 #include "Game/SettingsStore.hpp"
+#include "Game/ShepherdDogRescue.hpp"
 
 #include <Bamboo/Bamboo.hpp>
 #include <Bamboo/Script.hpp>
@@ -46,6 +47,7 @@ private:
         Loading,
         Tutorial,
         Playing,
+        DogRescue,
         BombExplosion,
         Victory,
         Defeat,
@@ -68,13 +70,19 @@ private:
     };
 
     struct BombSheep {
-        enum class State { None, Armed, Rescued, Defused, Exploded };
+        enum class State { None, Armed, DogRescue, Rescued, Defused, Exploded };
         SheepId id{kInvalidSheepId};
+        Bamboo::EntityHandle entity;
         State state{State::None};
         float seconds{};
         bool impact{};
         int hitsRemaining{};
-        float explosionElapsed{};
+    };
+
+    struct RescueFlockPose {
+        SheepId id{kInvalidSheepId};
+        DogRescue::Point position{};
+        DogRescue::Point offset{};
     };
 
     PandaUI::Window window_;
@@ -88,9 +96,19 @@ private:
     PastureScene pasture_;
     Bamboo::TextureHandle runningSheepTexture_;
     Bamboo::EntityHandle bombEntity_;
+    std::vector<Bamboo::EntityHandle> bombAccessoryEntities_;
     PandaUI::TextureHandle bombUiTexture_;
     PandaUI::TextureHandle standingSheepUiTexture_;
-    BombSheep bomb_;
+    std::vector<BombSheep> bombs_;
+    Bamboo::EntityHandle rescueDogEntity_;
+    Bamboo::EntityHandle rescueDogShadow_;
+    DogRescue::Motion dogRescue_;
+    SheepId dogRescueBomb_{kInvalidSheepId};
+    std::vector<RescueFlockPose> rescueFlockPoses_;
+    std::vector<std::size_t> bombTutorialOrder_;
+    std::size_t bombTutorialCursor_{};
+    float bombExplosionElapsed_{};
+    bool fatalBombImpact_{};
     std::vector<SheepVisual> sheepVisuals_;
     EscapeHerd escapeHerd_;
     std::vector<BlockedReaction> blockedReactions_;
@@ -116,11 +134,16 @@ private:
     void updateEscapes(float deltaTime);
     void updateBlockedReactions(float deltaTime);
     void updateHint(float deltaTime);
-    void prepareBomb(float seconds, int preferredWave, std::uint64_t seed,
-        int impactHits, int impactPreferredWave);
+    void prepareBombs(const LevelDefinition &definition);
+    void showBombTutorial();
     [[nodiscard]] bool hitImpactBomb(SheepId attacker);
     void startBombLevel();
-    void expireBomb();
+    void expireBomb(BombSheep &bomb);
+    [[nodiscard]] bool beginDogRescue(BombSheep &bomb);
+    void updateDogRescue(float deltaTime);
+    void applyDogRescuePose(float deltaTime = 0.f);
+    void resetDogRescue();
+    [[nodiscard]] float dogOffscreenY() const;
     void updateBombVisual();
     void updateBombHUD();
     [[nodiscard]] PandaUI::Point sheepScreenPosition(SheepId id);

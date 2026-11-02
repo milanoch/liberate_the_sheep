@@ -12,7 +12,7 @@ struct LevelSelectText {
     std::string title = "LEVELS";
     // Retained for existing localized callers; tiles now show numbers and
     // native check/lock badges, without subtitles or heart counters.
-    std::string subtitle = "39 pasture puzzles. Timed and impact bomb sheep await.";
+    std::string subtitle = "40 pasture puzzles. Timed and impact bomb sheep await.";
     std::string levelPrefix = "LEVEL";
     std::string locked = "LOCKED";
     std::string ready = "READY";

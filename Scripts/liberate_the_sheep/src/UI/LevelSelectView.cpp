@@ -19,25 +19,35 @@ namespace {
     class MeadowButton : public PandaUI::Control {
     public:
         MeadowButton(
-            std::string title, float fontSize, float height, LevelStatus status
+            std::string title, float fontSize, float height, LevelStatus status,
+            bool levelTile = true
         )
-            : status_(status) {
+            : status_(status),
+              appearance_(gameButtonAppearance(
+                  levelTile && status == LevelStatus::Current
+                      ? PandaUI::ButtonStyle::AccentOutline : PandaUI::ButtonStyle::Neutral,
+                  height
+              )) {
             layout().setHeight(PandaUI::Length::points(height));
             layout().setMinHeight(PandaUI::Length::points(height));
             layout().setFlexDirection(PandaUI::FlexDirection::Column);
             layout().setJustifyContent(PandaUI::Justify::Center);
-            surface().setCornerRadius(19.f);
-            surface().setBorderWidth(1.f);
-            surface().setShadowColor(PandaUI::Color(0x00000028));
-            surface().setShadowOffset(PandaUI::Point(0.f, 3.f));
-            surface().setShadowRadius(8.f);
+            // Use the same per-instance state plates as the native game buttons,
+            // keeping the level badges and the existing smooth color transitions.
+            surface().setCornerRadius(levelTile ? 18.f : 14.f);
+            surface().setBorderWidth(appearance_.borderWidth);
+            surface().setShadow(PandaUI::Shadow::none);
+            if (status == LevelStatus::Completed) {
+                appearance_.normal.surface.border = PandaUI::Color(0xEDC97B38);
+            }
 
             title_ = makeLabel(
                 std::move(title), fontSize, PandaUI::FontWeight::Bold,
-                PandaUI::Color(0xF5F5F5FF),
+                Colors::cream(),
                 1, PandaUI::TextAlignment::Center
             );
             title_->layout().setWidth(PandaUI::Length::percent(100.f));
+            title_->setTextShadow(appearance_.titleShadow);
             title_->setUserInteractionEnabled(false);
             addSubview(title_);
             setEnabled(status_ != LevelStatus::Locked);
@@ -45,8 +55,10 @@ namespace {
             setCursor(status_ == LevelStatus::Locked ? PandaUI::Cursor::Arrow
                                                     : PandaUI::Cursor::PointingHand);
             updateAppearance();
-            fill_ = targetFill_;
+            top_ = targetTop_;
+            bottom_ = targetBottom_;
             border_ = targetBorder_;
+            text_ = targetText_;
             appearanceAnimating_ = false;
             applyAppearance();
         }
@@ -74,13 +86,19 @@ namespace {
                 return value.r != target.r || value.g != target.g ||
                        value.b != target.b || value.a != target.a;
             };
-            const bool fillMoving = approach(fill_, targetFill_);
+            const bool topMoving = approach(top_, targetTop_);
+            const bool bottomMoving = approach(bottom_, targetBottom_);
             const bool borderMoving = approach(border_, targetBorder_);
-            appearanceAnimating_ = fillMoving || borderMoving;
+            const bool textMoving = approach(text_, targetText_);
+            appearanceAnimating_ = topMoving || bottomMoving || borderMoving || textMoving;
             applyAppearance();
         }
 
         void controlStateChanged(PandaUI::ControlState, PandaUI::ControlState) override {
+            updateAppearance();
+        }
+
+        void themeChanged() override {
             updateAppearance();
         }
 
@@ -99,18 +117,18 @@ namespace {
             badge.center = glm::vec3(x, y, 0.f);
             badge.size = PandaUI::Size(25.f, 25.f);
             badge.color = status_ == LevelStatus::Completed
-                              ? PandaUI::Color(0x518554FF)
-                              : PandaUI::Color(0x343434D9);
+                              ? PandaUI::Color(0xAD874BE6)
+                              : PandaUI::Color(0x2A2927D9);
             renderer.drawRoundedRect(badge, 12.5f);
 
             if (status_ == LevelStatus::Completed) {
-                const PandaUI::Color cream(0xFFF9E9FF);
+                const PandaUI::Color cream = Colors::cream();
                 renderer.drawLine({x - 6.f, y}, {x - 1.5f, y + 4.f}, 2.6f, cream);
                 renderer.drawLine({x - 1.5f, y + 4.f}, {x + 6.f, y - 4.f}, 2.6f, cream);
                 return;
             }
 
-            const PandaUI::Color ink(0xD7D7D7FF);
+            const PandaUI::Color ink(0xBDB3A0FF);
             PandaUI::UIRenderer::RectData shackle;
             shackle.center = glm::vec3(x, y - 2.5f, 0.f);
             shackle.size = PandaUI::Size(10.f, 12.f);
@@ -127,40 +145,38 @@ namespace {
 
     private:
         void updateAppearance() {
-            const bool locked = status_ == LevelStatus::Locked;
-            // Shared with Settings: keep levels and Back on the same neutral base.
-            PandaUI::Color fill = Colors::menuCard();
-            if (!locked && isHighlighted()) {
-                fill = PandaUI::Color(.10f, .10f, .10f, .76f);
-            } else if (!locked && isHovered()) {
-                fill = PandaUI::Color(.16f, .16f, .16f, .72f);
-            }
-            const PandaUI::Color border =
-                isFocused() ? PandaUI::Color(0xFFFFFFA0)
-                            : locked ? PandaUI::Color(0xFFFFFF1A)
-                                     : PandaUI::Color(0xFFFFFF24);
-            targetFill_ = fill;
-            targetBorder_ = border;
+            const auto &state = !isEnabled() ? appearance_.disabled
+                                : isHighlighted() ? appearance_.pressed
+                                : isHovered() ? appearance_.hovered
+                                : isFocused() ? appearance_.focused : appearance_.normal;
+            const auto &plate = state.surface;
+            targetTop_ = plate.gradient ? plate.gradient->start.resolve()
+                                        : plate.background.resolve();
+            targetBottom_ = plate.gradient ? plate.gradient->end.resolve() : targetTop_;
+            targetBorder_ = isFocused() && isEnabled() ? Colors::focus() : plate.border.resolve();
+            targetText_ = state.text.resolve();
             appearanceAnimating_ = true;
-            if (title_) {
-                title_->setTextColor(
-                    PandaUI::Color(locked ? 0xC7C7C7FF : 0xF5F5F5FF)
-                );
-            }
         }
 
         void applyAppearance() {
-            setBackgroundColor(fill_);
+            setBackgroundColor(top_);
+            surface().setBackgroundGradient(PandaUI::SurfaceGradient(top_, bottom_));
             surface().setBorderColor(border_);
+            title_->setTextColor(text_);
             setNeedsDisplay();
         }
 
         LevelStatus status_;
+        PandaUI::ButtonAppearance appearance_;
         std::shared_ptr<PandaUI::Label> title_;
-        PandaUI::Color fill_;
+        PandaUI::Color top_;
+        PandaUI::Color bottom_;
         PandaUI::Color border_;
-        PandaUI::Color targetFill_;
+        PandaUI::Color text_;
+        PandaUI::Color targetTop_;
+        PandaUI::Color targetBottom_;
         PandaUI::Color targetBorder_;
+        PandaUI::Color targetText_;
         bool appearanceAnimating_ = false;
     };
 
@@ -222,6 +238,7 @@ LevelSelectView::LevelSelectView(
     auto card = makeCard(460.f);
     // Keep the layout container, but let the animated menu scene show through.
     card->setBackgroundColor(Colors::transparent());
+    card->surface().clearBackgroundGradient();
     card->surface().setBorderWidth(0.f);
     card->surface().setBorderColor(Colors::transparent());
     card->surface().setShadowColor(Colors::transparent());
@@ -234,11 +251,15 @@ LevelSelectView::LevelSelectView(
         text.title,
         30.f,
         PandaUI::FontWeight::Bold,
-        PandaUI::Color(0x343941FF),
+        Colors::cream(),
         1,
         PandaUI::TextAlignment::Center
     );
     title->layout().setWidth(PandaUI::Length::percent(100.f));
+    title->setLetterSpacing(1.f);
+    title->setTextShadow(PandaUI::TextShadow(
+        PandaUI::Point(0.f, 2.f), PandaUI::Color(0x00000080)
+    ));
     card->addSubview(title);
 
     auto grid = std::make_shared<PandaUI::Panel>();
@@ -291,7 +312,7 @@ LevelSelectView::LevelSelectView(
     card->addSubview(grid);
 
     auto backButton = std::make_shared<MeadowButton>(
-        text.backButton, 16.f, 48.f, LevelStatus::Current
+        text.backButton, 16.f, 48.f, LevelStatus::Current, false
     );
     backButton->layout().setWidth(PandaUI::Length::percent(100.f));
     backButton->setPrimaryAction([action = std::move(back)](PandaUI::Control &) {

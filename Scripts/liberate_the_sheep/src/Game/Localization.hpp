@@ -85,6 +85,12 @@ enum class TextKey : std::size_t {
     CheatMode,
     CheatModeDescription,
 
+    LoadErrorTitle,
+    LoadErrorMessage,
+
+    DogRescueTitle,
+    DogRescueMessage,
+
     Count,
 };
 

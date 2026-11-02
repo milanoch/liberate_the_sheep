@@ -3,36 +3,22 @@
 #include "UI/SheepToggle.hpp"
 #include "UI/UIStyle.hpp"
 
-#include <algorithm>
-#include <cmath>
 #include <utility>
 
 namespace LiberateTheSheep::UI {
 namespace {
 
-    const PandaUI::Color kText(0xF5F5F5FF);
-    const PandaUI::Color kSecondaryText(0xC7C7C7FF);
-    const PandaUI::Color kDangerText(0xFFAAA5FF);
+    const PandaUI::Color kText = Colors::cream();
+    const PandaUI::Color kSecondaryText = Colors::mutedCream();
+    const PandaUI::Color kDangerText = Colors::danger();
 
-    // Native ButtonStyle::AccentOutline installs a blue surface and blue text.
-    // Keep the palette local instead of changing the editor's global UI theme.
+    // Selection chooses a semantic skin; PandaUI applies its native hover,
+    // press, focus and disabled appearances without borrowing the editor theme.
     class SettingsButton final : public PandaUI::Button {
     public:
         explicit SettingsButton(std::string title, bool destructive = false)
             : PandaUI::Button(std::move(title)), destructive_(destructive) {
-            layout().setHeight(PandaUI::Length::points(48.f));
-            layout().setMinHeight(PandaUI::Length::points(48.f));
-            layout().setFlexShrink(0.f);
-            setFont(PandaUI::Font(15.f, PandaUI::FontWeight::Bold));
-            surface().setCornerRadius(12.f);
-            surface().setBorderWidth(1.f);
-            surface().setShadowColor(Colors::transparent());
             refreshAppearance();
-            fill_ = targetFill_;
-            border_ = targetBorder_;
-            text_ = targetText_;
-            animating_ = false;
-            applyAppearance();
         }
 
     protected:
@@ -44,91 +30,20 @@ namespace {
             refreshAppearance();
         }
 
-        void update(double deltaTime) override {
-            if (!animating_ || deltaTime <= 0.0) {
-                return;
-            }
-            const float blend = 1.f - std::exp(
-                -static_cast<float>(std::clamp(deltaTime, 0.0, .1)) / .08f
-            );
-            const auto approach = [blend](PandaUI::Color &value, const PandaUI::Color &target) {
-                const auto channel = [blend](float from, float to) {
-                    const float next = from + (to - from) * blend;
-                    return std::abs(next - to) < .001f ? to : next;
-                };
-                value = PandaUI::Color(
-                    channel(value.r, target.r), channel(value.g, target.g),
-                    channel(value.b, target.b), channel(value.a, target.a)
-                );
-                return value.r != target.r || value.g != target.g ||
-                       value.b != target.b || value.a != target.a;
-            };
-            const bool fillMoving = approach(fill_, targetFill_);
-            const bool borderMoving = approach(border_, targetBorder_);
-            const bool textMoving = approach(text_, targetText_);
-            animating_ = fillMoving || borderMoving || textMoving;
-            applyAppearance();
-        }
-
     private:
         void refreshAppearance() {
-            const auto &theme = PandaUI::theme();
-            targetFill_ = PandaUI::Color(0xFFFFFF0F);
-            targetBorder_ = PandaUI::Color(0xFFFFFF24);
-            targetText_ = kText;
-
-            if (isSelected() && !destructive_) {
-                // The same semantic accent as the sheep toggle's on state.
-                targetFill_ = isHighlighted() ? theme.accentPressed
-                              : isHovered() ? theme.accentHover : theme.accent;
-                targetBorder_ = Colors::transparent();
-                targetText_ = theme.onAccent;
-            } else {
-                if (isHighlighted()) {
-                    targetFill_ = PandaUI::Color(0xFFFFFF09);
-                } else if (isHovered()) {
-                    targetFill_ = PandaUI::Color(0xFFFFFF1F);
-                }
-                if (destructive_ && isSelected()) {
-                    // A clearly red confirmation, with white text for contrast.
-                    targetFill_ = PandaUI::Color(isHighlighted() ? 0x9E3037FF
-                                                 : isHovered() ? 0xD44953FF
-                                                               : 0xBF3943FF);
-                    targetBorder_ = PandaUI::Color(0xFFAAA566);
-                    targetText_ = PandaUI::Color(0xFFFFFFFF);
-                }
-            }
-            if (isFocused()) {
-                targetBorder_ = PandaUI::Color(0xFFFFFFA0);
-            }
-            if (!isEnabled()) {
-                targetFill_ = PandaUI::Color(0xFFFFFF08);
-                targetBorder_ = PandaUI::Color(0xFFFFFF14);
-                targetText_ = PandaUI::Color(0x999999FF);
-            }
-            animating_ = true;
-        }
-
-        void applyAppearance() {
-            setBackgroundColor(fill_);
-            surface().setBorderColor(border_);
-            getTitleLabel()->setTextColor(text_);
-            setNeedsDisplay();
+            const auto style = isSelected()
+                ? (destructive_ ? PandaUI::ButtonStyle::Destructive : PandaUI::ButtonStyle::Accent)
+                : PandaUI::ButtonStyle::Neutral;
+            applyGameButtonStyle(*this, style, 48.f);
         }
 
         bool destructive_;
-        bool animating_ = false;
-        PandaUI::Color fill_;
-        PandaUI::Color border_;
-        PandaUI::Color text_;
-        PandaUI::Color targetFill_;
-        PandaUI::Color targetBorder_;
-        PandaUI::Color targetText_;
     };
 
     std::shared_ptr<PandaUI::Panel> makeDivider() {
         auto divider = std::make_shared<PandaUI::Panel>();
-        divider->setBackgroundColor(PandaUI::Color(0xFFFFFF1A));
+        divider->setBackgroundColor(Colors::border());
         divider->layout().setWidth(PandaUI::Length::percent(100.f));
         divider->layout().setHeight(PandaUI::Length::points(1.f));
         divider->layout().setFlexShrink(0.f);
@@ -159,6 +74,7 @@ namespace {
             title, 15.f, PandaUI::FontWeight::Bold, kText, 2
         );
         titleLabel->layout().setWidth(PandaUI::Length::percent(100.f));
+        titleLabel->setLetterSpacing(.6f);
         header->addSubview(titleLabel);
 
         auto descriptionLabel = makeLabel(
@@ -237,12 +153,10 @@ SettingsView::SettingsView(
 
     auto card = makeCard(500.f);
     card->setBackgroundColor(Colors::menuCard());
-    card->surface().setShadowColor(PandaUI::Color(0x00000028));
-    card->surface().setShadowOffset(PandaUI::Point(0.f, 3.f));
-    card->surface().setShadowRadius(8.f);
+    card->surface().setShadow(PandaUI::Shadow::modal);
     card->layout().setFlexShrink(0.f);
-    card->layout().setPadding(PandaUI::Edge::All, 22.f);
-    card->layout().setGap(16.f);
+    card->layout().setPadding(PandaUI::Edge::All, PandaUI::Spacing::xxl);
+    card->layout().setGap(PandaUI::Spacing::xl);
 
     auto heading = std::make_shared<PandaUI::Panel>();
     heading->setBackgroundColor(Colors::transparent());
@@ -260,6 +174,7 @@ SettingsView::SettingsView(
         PandaUI::TextAlignment::Center
     );
     title->layout().setWidth(PandaUI::Length::percent(100.f));
+    title->setLetterSpacing(1.f);
     heading->addSubview(title);
 
     auto subtitle = makeLabel(

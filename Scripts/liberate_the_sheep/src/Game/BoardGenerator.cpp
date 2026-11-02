@@ -6,6 +6,7 @@
 #include <limits>
 #include <sstream>
 #include <unordered_set>
+#include <unordered_map>
 
 namespace LiberateTheSheep::Game {
 namespace {
@@ -109,9 +110,30 @@ namespace {
     };
 
     [[nodiscard]] std::vector<CandidatePlacement> enumerateCandidates(
-        const BoardModel &board, SheepId id, DirectionMask directions, StableRandom &random
+        const BoardModel &board, SheepId id, DirectionMask directions, StableRandom &random,
+        bool tightDependencies
     ) {
         std::vector<CandidatePlacement> candidates;
+        std::unordered_map<SheepId, int> chainHeight;
+        std::unordered_map<SheepId, int> chainWeight;
+        if (tightDependencies) {
+            // Follow each sheep's nearest-blocker chain to its currently free
+            // root. Blocking a root with a long chain extends a real sequence
+            // of required moves instead of adding another independent lane.
+            for (const Sheep &sheep : board.sheep()) {
+                const Sheep *cursor = &sheep;
+                for (std::size_t depth = 0; cursor && depth < board.sheepCount(); ++depth) {
+                    const auto move = board.inspectMove(cursor->id);
+                    if (move.canEscape()) {
+                        chainHeight[cursor->id] = std::max(chainHeight[cursor->id],
+                            static_cast<int>(depth) + 1);
+                        ++chainWeight[cursor->id];
+                        break;
+                    }
+                    cursor = move.blocker ? board.findSheep(*move.blocker) : nullptr;
+                }
+            }
+        }
         for (const Direction direction : kDirections) {
             if (!containsDirection(directions, direction)) {
                 continue;
@@ -129,6 +151,8 @@ namespace {
 
                     int blockedSheep = 0;
                     int newlyBlockedSheep = 0;
+                    int longestChain = 0;
+                    int connectedSheep = 0;
                     const auto [tail, head] = candidate.occupiedCells();
                     for (const Sheep &existing : board.sheep()) {
                         if (!cellIsAheadOf(tail, existing) && !cellIsAheadOf(head, existing)) {
@@ -137,14 +161,22 @@ namespace {
                         ++blockedSheep;
                         if (board.inspectMove(existing.id).canEscape()) {
                             ++newlyBlockedSheep;
+                            if (tightDependencies) {
+                                longestChain = std::max(longestChain, chainHeight[existing.id]);
+                                connectedSheep += chainWeight[existing.id];
+                            }
                         }
                     }
 
                     // Dependencies dominate the choice. Forward space makes it more
                     // likely that a later insertion can block this sheep in turn.
-                    const int score = newlyBlockedSheep * 500 + blockedSheep * 90 +
-                                      rayLengthBeyondHead(board, candidate) * 14 +
-                                      occupiedNeighbours(board, candidate) * 5;
+                    const int score = tightDependencies
+                        ? newlyBlockedSheep * 1'800 + longestChain * 260 + connectedSheep * 24 +
+                            blockedSheep * 50 + rayLengthBeyondHead(board, candidate) * 6 +
+                            occupiedNeighbours(board, candidate) * 8
+                        : newlyBlockedSheep * 500 + blockedSheep * 90 +
+                            rayLengthBeyondHead(board, candidate) * 14 +
+                            occupiedNeighbours(board, candidate) * 5;
                     candidates.push_back({candidate, score, random.next()});
                 }
             }
@@ -197,6 +229,24 @@ namespace {
             analysis.solutionWaveCount, config.minSolutionWaves, config.maxSolutionWaves
         );
 
+        if (config.preferTightDependencies) {
+            std::size_t totalDepth = 0;
+            std::size_t sheepCount = 0;
+            for (std::size_t wave = 0; wave < analysis.solutionWaves.size(); ++wave) {
+                totalDepth += (wave + 1) * analysis.solutionWaves[wave].size();
+                sheepCount += analysis.solutionWaves[wave].size();
+            }
+            const int meanDepthTimes100 = sheepCount > 0
+                ? static_cast<int>(totalDepth * 100 / sheepCount) : 0;
+            // An isolated long chain used to hide a large group of easy sheep.
+            // Average depth now rewards interdependence across the whole flock;
+            // opening choices and broad solution waves are noticeably penalized.
+            return 1'000'000 - initialPenalty * 100'000 - wavePenalty * 50'000 +
+                static_cast<int>(analysis.solutionWaveCount) * 1'000 + meanDepthTimes100 * 20 -
+                static_cast<int>(analysis.initialEscapableCount) * 2'000 -
+                static_cast<int>(analysis.widestSolutionWave) * 500;
+        }
+
         // A candidate inside both requested ranges always beats one outside them.
         // Within the ranges, more dependency waves and fewer initial choices win.
         return 1'000'000 - initialPenalty * 50'000 - wavePenalty * 50'000 +
@@ -228,7 +278,8 @@ namespace {
         for (int index = 0; index < targetCount; ++index) {
             const SheepId nextId = static_cast<SheepId>(index + 1);
             std::vector<CandidatePlacement> placements =
-                enumerateCandidates(candidate.board, nextId, config.allowedDirections, random);
+                enumerateCandidates(candidate.board, nextId, config.allowedDirections, random,
+                    config.preferTightDependencies);
             if (placements.empty()) {
                 break;
             }
@@ -316,14 +367,16 @@ GenerationResult BoardGenerator::generate(const GenerationConfig &config) {
 
     for (int attempt = 0; attempt < config.maxAttempts; ++attempt) {
         CandidateBoard candidate = buildCandidate(config, targetCount, attempt);
+        if (!candidate.analysis.solvable || !candidate.board.validateStructure().valid()) {
+            continue;
+        }
         if (!bestPartial || candidate.board.sheepCount() > bestPartial->board.sheepCount() ||
             (candidate.board.sheepCount() == bestPartial->board.sheepCount() &&
              candidate.quality > bestPartial->quality)) {
             bestPartial = candidate;
         }
 
-        if (static_cast<int>(candidate.board.sheepCount()) != targetCount ||
-            !candidate.analysis.solvable || !candidate.board.validateStructure().valid()) {
+        if (static_cast<int>(candidate.board.sheepCount()) != targetCount) {
             continue;
         }
 
@@ -332,15 +385,22 @@ GenerationResult BoardGenerator::generate(const GenerationConfig &config) {
         }
     }
 
+    if (!bestComplete && !bestPartial) {
+        result.status = GenerationStatus::ValidationFailed;
+        result.error = "Generator could not construct a structurally valid solvable board";
+        return result;
+    }
+    // Greedy domino packing can leave holes before reaching a dense target.
+    // A smaller solvable flock is still a playable puzzle, not a lost game.
     const CandidateBoard *selected = bestComplete ? &*bestComplete : &*bestPartial;
     result.board = selected->board;
     result.constructionOrder = selected->constructionOrder;
     result.guaranteedSolution = selected->guaranteedSolution;
     result.metrics = makeMetrics(config, targetCount, *selected, config.maxAttempts);
 
-    if (!bestComplete) {
+    if (!bestComplete && selected->board.empty()) {
         result.status = GenerationStatus::TargetDensityUnreachable;
-        result.error = "Generator could not reach the requested sheep count after all attempts";
+        result.error = "Generator could not place any sheep after all attempts";
         return result;
     }
 
@@ -361,7 +421,7 @@ int BoardGenerator::targetSheepCount(const GenerationConfig &config) noexcept {
 
     const std::int64_t cells =
         static_cast<std::int64_t>(config.width) * static_cast<std::int64_t>(config.height);
-    if (cells > std::numeric_limits<int>::max()) {
+    if (cells < 2 || cells > std::numeric_limits<int>::max()) {
         return 0;
     }
 
@@ -377,6 +437,8 @@ std::vector<std::string> BoardGenerator::validateConfig(const GenerationConfig &
         errors.emplace_back("width and height must be positive");
     } else if (config.width > std::numeric_limits<int>::max() / config.height) {
         errors.emplace_back("board cell count exceeds the supported integer range");
+    } else if (config.width * config.height < 2) {
+        errors.emplace_back("board must have space for at least one two-cell sheep");
     }
     if (!std::isfinite(config.targetDensity) || config.targetDensity <= 0.0 ||
         config.targetDensity > 1.0) {
@@ -422,8 +484,8 @@ BoardGenerator::validateResult(const GenerationConfig &config, const GenerationR
     }
 
     const int expectedCount = targetSheepCount(config);
-    if (static_cast<int>(board.sheepCount()) != expectedCount) {
-        report.errors.emplace_back("generated board did not reach the target sheep count");
+    if (board.empty() || static_cast<int>(board.sheepCount()) > expectedCount) {
+        report.errors.emplace_back("generated board has an invalid sheep count");
     }
     if (result.constructionOrder.size() != board.sheepCount()) {
         report.errors.emplace_back("construction order size differs from the board sheep count");

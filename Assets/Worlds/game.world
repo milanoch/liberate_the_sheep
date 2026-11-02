@@ -4061,6 +4061,38 @@
             }
         },
         {
+            "id": 1572209451,
+            "tagComponent": { "tag": "ShepherdDogShadow" },
+            "relationshipComponent": { "parent": 0, "children": [] },
+            "transformComponent": {
+                "position": { "x": 0, "y": -12, "z": 0.09 },
+                "rotation": { "x": 0, "y": 0, "z": 0, "w": 1 },
+                "scale": { "x": 2.4, "y": 2.4, "z": 1 }
+            },
+            "scriptListComponent": { "scripts": [] },
+            "spriteRendererComponent": {
+                "color": { "x": 0, "y": 0, "z": 0, "w": 0 },
+                "cols": 15, "rows": 14, "index": 0,
+                "material": 0, "texture": 745241933
+            }
+        },
+        {
+            "id": 3077490229,
+            "tagComponent": { "tag": "ShepherdDogRescuer" },
+            "relationshipComponent": { "parent": 0, "children": [] },
+            "transformComponent": {
+                "position": { "x": 0, "y": -12, "z": 0.20 },
+                "rotation": { "x": 0, "y": 0, "z": 0, "w": 1 },
+                "scale": { "x": 2.4, "y": 2.4, "z": 1 }
+            },
+            "scriptListComponent": { "scripts": [] },
+            "spriteRendererComponent": {
+                "color": { "x": 1, "y": 1, "z": 1, "w": 0 },
+                "cols": 15, "rows": 14, "index": 0,
+                "material": 0, "texture": 745241933
+            }
+        },
+        {
             "id": 1744052777,
             "tagComponent": {
                 "tag": "BombSheepAccessory"
@@ -4084,6 +4116,38 @@
                 "index": 0,
                 "material": 0,
                 "texture": 2523272276
+            }
+        },
+        {
+            "id": 3405616652,
+            "tagComponent": { "tag": "BombSheepAccessory2" },
+            "relationshipComponent": { "parent": 0, "children": [] },
+            "transformComponent": {
+                "position": { "x": 0, "y": 0, "z": 0.16 },
+                "rotation": { "x": 0, "y": 0, "z": 0, "w": 1 },
+                "scale": { "x": 1.16, "y": 1.16, "z": 1 }
+            },
+            "scriptListComponent": { "scripts": [] },
+            "spriteRendererComponent": {
+                "color": { "x": 1, "y": 1, "z": 1, "w": 0 },
+                "cols": 2, "rows": 1, "index": 1,
+                "material": 0, "texture": 2523272276
+            }
+        },
+        {
+            "id": 629637262,
+            "tagComponent": { "tag": "BombSheepAccessory3" },
+            "relationshipComponent": { "parent": 0, "children": [] },
+            "transformComponent": {
+                "position": { "x": 0, "y": 0, "z": 0.16 },
+                "rotation": { "x": 0, "y": 0, "z": 0, "w": 1 },
+                "scale": { "x": 1.16, "y": 1.16, "z": 1 }
+            },
+            "scriptListComponent": { "scripts": [] },
+            "spriteRendererComponent": {
+                "color": { "x": 1, "y": 1, "z": 1, "w": 0 },
+                "cols": 2, "rows": 1, "index": 1,
+                "material": 0, "texture": 2523272276
             }
         }
     ]

@@ -1,11 +1,13 @@
 #include "Game/LevelController.hpp"
 
 #include "Game/BoardGenerator.hpp"
+#include "Game/BombPlacement.hpp"
 #include "Game/LevelCatalog.hpp"
 #include "Game/Localization.hpp"
 #include "Game/SessionState.hpp"
 #include "Game/SheepAppearance.hpp"
 #include "Game/SheepRunAnimation.hpp"
+#include "Game/ShepherdDogAnimation.hpp"
 #include "UI/GameplayRootView.hpp"
 
 #include <Bamboo/ApplicationAPI.hpp>
@@ -132,11 +134,13 @@ void LevelController::update(float deltaTime) {
     // Use the same simulation clock as EscapeHerd. A suspended application or
     // stalled frame must not burn a deadline while the sheep cannot move.
     const float step = std::isfinite(deltaTime) ? std::clamp(deltaTime, 0.f, 0.1f) : 0.f;
-    if (phase_ == Phase::BombExplosion) {
-        bomb_.explosionElapsed += step;
-        if (bomb_.explosionElapsed >= kBombExplosionDuration) {
+    if (phase_ == Phase::DogRescue) {
+        updateDogRescue(step);
+    } else if (phase_ == Phase::BombExplosion) {
+        bombExplosionElapsed_ += step;
+        if (bombExplosionElapsed_ >= kBombExplosionDuration) {
             phase_ = Phase::Defeat;
-            if (rootView_) { rootView_->showBombDefeat(bomb_.impact); }
+            if (rootView_) { rootView_->showBombDefeat(fatalBombImpact_); }
         }
     } else {
         updateAnimation(step);
@@ -193,6 +197,8 @@ void LevelController::createUI() {
     text.noHeartsLeft = localizedString(TextKey::NoHeartsLeft, language);
     text.defeatTitle = localizedString(TextKey::DefeatTitle, language);
     text.defeatMessage = localizedString(TextKey::DefeatMessage, language);
+    text.loadErrorTitle = localizedString(TextKey::LoadErrorTitle, language);
+    text.loadErrorMessage = localizedString(TextKey::LoadErrorMessage, language);
     text.nextLevelButton = localizedString(TextKey::NextLevel, language);
     text.replayButton = localizedString(TextKey::Replay, language);
     text.bombTitle = localizedString(TextKey::BombTitle, language);
@@ -210,6 +216,8 @@ void LevelController::createUI() {
     text.impactBombHits = localizedString(TextKey::ImpactBombHits, language);
     text.impactBombExpired = localizedString(TextKey::ImpactBombExpired, language);
     text.impactBombDefeatMessage = localizedString(TextKey::ImpactBombDefeatMessage, language);
+    text.dogRescueTitle = localizedString(TextKey::DogRescueTitle, language);
+    text.dogRescueMessage = localizedString(TextKey::DogRescueMessage, language);
 
     rootView_ =
         std::make_shared<UI::GameplayRootView>(
@@ -224,8 +232,24 @@ void LevelController::createUI() {
 
 void LevelController::resolveSceneEntities() {
     cameraEntity_ = Bamboo::WorldAPI::findByTag("Camera");
+    rescueDogEntity_ = Bamboo::WorldAPI::findByTag("ShepherdDogRescuer");
+    rescueDogShadow_ = Bamboo::WorldAPI::findByTag("ShepherdDogShadow");
+    if (rescueDogShadow_.isValid()) {
+        Bamboo::SpriteRendererComponentAPI::setColor(rescueDogShadow_, {0.f, 0.f, 0.f, 0.f});
+    }
+    if (rescueDogEntity_.isValid()) {
+        Bamboo::SpriteRendererComponentAPI::setColor(rescueDogEntity_, {1.f, 1.f, 1.f, 0.f});
+    }
     pasture_.resolve();
     bombEntity_ = Bamboo::WorldAPI::findByTag("BombSheepAccessory");
+    bombAccessoryEntities_.clear();
+    for (const char *tag : {"BombSheepAccessory", "BombSheepAccessory2", "BombSheepAccessory3"}) {
+        auto entity = Bamboo::WorldAPI::findByTag(tag);
+        if (entity.isValid()) {
+            Bamboo::SpriteRendererComponentAPI::setColor(entity, {1.f, 1.f, 1.f, 0.f});
+            bombAccessoryEntities_.push_back(entity);
+        }
+    }
     if (bombEntity_.isValid()) {
         Bamboo::SpriteRendererComponentAPI::setColor(bombEntity_, {1.f, 1.f, 1.f, 0.f});
         if (!Bamboo::SpriteRendererComponentAPI::getTexture(bombEntity_).isValid()) {
@@ -260,6 +284,11 @@ void LevelController::loadLevel(int levelNumber) {
     currentLevel_ = clampedLevel;
     hearts_.reset(settings_.immortalModeEnabled());
     phase_ = Phase::Loading;
+    updateHUD();
+    if (rootView_) {
+        rootView_->hideResult();
+        rootView_->setBoardInputEnabled(false);
+    }
 
     GenerationResult result = BoardGenerator::generate(definition->generation);
     if (!result.succeeded()) {
@@ -270,7 +299,7 @@ void LevelController::loadLevel(int levelNumber) {
         );
         phase_ = Phase::Error;
         if (rootView_) {
-            rootView_->showDefeat();
+            rootView_->showLoadError();
         }
         return;
     }
@@ -284,11 +313,15 @@ void LevelController::loadLevel(int levelNumber) {
         }
         phase_ = Phase::Error;
         if (rootView_) {
-            rootView_->showDefeat();
+            rootView_->showLoadError();
         }
         return;
     }
 
+    if (result.metrics.generatedSheepCount < result.metrics.targetSheepCount) {
+        LOG_WARN("Level %d: using fullest solvable packing (%d of %d requested sheep)",
+            currentLevel_, result.metrics.generatedSheepCount, result.metrics.targetSheepCount);
+    }
     board_.emplace(std::move(*result.board));
     // Capture once: worn pasture does not instantly regrow as the flock leaves.
     pasture_.captureFlock(*board_, definition->generation.seed ^ result.metrics.layoutFingerprint);
@@ -306,9 +339,7 @@ void LevelController::loadLevel(int levelNumber) {
         rootView_->setBoardInputEnabled(true);
     }
     phase_ = Phase::Playing;
-    prepareBomb(definition->bombSeconds, definition->bombPreferredWave,
-        definition->generation.seed ^ result.metrics.layoutFingerprint,
-        definition->impactBombHits, definition->impactBombPreferredWave);
+    prepareBombs(*definition);
     updateHUD();
     updateBombVisual();
 
@@ -362,14 +393,21 @@ void LevelController::createGeneratedEntities(std::uint64_t appearanceSeed) {
 }
 
 void LevelController::destroyGeneratedEntities() {
-    bomb_ = {};
-    if (bombEntity_.isValid()) {
-        Bamboo::SpriteRendererComponentAPI::setColor(bombEntity_, {1.f, 1.f, 1.f, 0.f});
+    resetDogRescue();
+    bombs_.clear();
+    bombTutorialOrder_.clear();
+    bombTutorialCursor_ = 0;
+    bombExplosionElapsed_ = 0.f;
+    fatalBombImpact_ = false;
+    for (auto entity : bombAccessoryEntities_) {
+        if (entity.isValid()) {
+            Bamboo::SpriteRendererComponentAPI::setColor(entity, {1.f, 1.f, 1.f, 0.f});
+        }
     }
     if (rootView_) {
         rootView_->hideBombTutorial();
-        rootView_->updateBombTimer(0.f, false, false, false, settings_.immortalModeEnabled());
-        rootView_->setBombMarker({}, 0.f, 0.f, 0, false);
+        rootView_->updateBombStatus({}, settings_.immortalModeEnabled());
+        rootView_->setBombMarkers({});
     }
     for (SheepVisual &visual : sheepVisuals_) {
         if (visual.entity.isValid()) {
@@ -486,15 +524,22 @@ void LevelController::updateAnimation(float deltaTime) {
     }
     // Stop motion precisely at the deadline before deciding whether the tail
     // crossed the gate. A long frame cannot award a late rescue.
-    const float step = bomb_.state == BombSheep::State::Armed && !bomb_.impact
-        ? std::min(deltaTime, bomb_.seconds) : deltaTime;
+    float step = deltaTime;
+    for (const auto &bomb : bombs_) {
+        if (bomb.state == BombSheep::State::Armed && !bomb.impact) {
+            step = std::min(step, bomb.seconds);
+        }
+    }
     updateEscapes(step);
     updateBlockedReactions(step);
-    if (phase_ == Phase::Playing && bomb_.state == BombSheep::State::Armed && !bomb_.impact) {
-        bomb_.seconds = std::max(0.f, bomb_.seconds - step);
-        if (bomb_.seconds <= 0.f) { expireBomb(); }
-        updateBombHUD();
+    for (auto &bomb : bombs_) {
+        if (phase_ != Phase::Playing) { break; }
+        if (bomb.state == BombSheep::State::Armed && !bomb.impact) {
+            bomb.seconds = std::max(0.f, bomb.seconds - step);
+            if (bomb.seconds <= 0.f) { expireBomb(bomb); }
+        }
     }
+    updateBombHUD();
 }
 
 void LevelController::updateEscapes(float deltaTime) {
@@ -509,11 +554,15 @@ void LevelController::updateEscapes(float deltaTime) {
         // Motion within the run frames supplies the gait. Keep the Sprite on
         // its route without rotating or stretching the entire sheep per step.
         const PenEscape::Sample sample = PenEscape::sample(runner.path, runner.distance);
-        if (runner.sheep.id == bomb_.id && bomb_.state == BombSheep::State::Armed &&
+        if (
             sample.position.y <= -PenEscape::kFenceOffset - kBombGateClearance &&
             std::abs(sample.position.x - static_cast<float>(board_->width()) * 0.5f) < 0.1f) {
-            bomb_.state = BombSheep::State::Rescued;
-            updateBombHUD();
+            for (auto &bomb : bombs_) {
+                if (runner.sheep.id == bomb.id && bomb.state == BombSheep::State::Armed) {
+                    bomb.state = BombSheep::State::Rescued;
+                    updateBombHUD();
+                }
+            }
         }
         const float x = layout_.worldRect.x + sample.position.x * layout_.cellWorldSize;
         const float y = layout_.worldRect.y + sample.position.y * layout_.cellWorldSize;
@@ -587,77 +636,80 @@ void LevelController::updateHint(float deltaTime) {
     }
 }
 
-void LevelController::prepareBomb(float seconds, int preferredWave, std::uint64_t seed,
-                                 int impactHits, int impactPreferredWave) {
-    if (!board_ || (seconds <= 0.f && impactHits <= 0)) { return; }
-    bomb_.impact = impactHits > 0;
-    if (bomb_.impact) { preferredWave = impactPreferredWave; }
-    // Choose from the generator's solvable dependency waves, rather than a
-    // random deeply buried sheep. The first encounter needs only an early chain.
-    const auto solution = board_->analyzeSolvability();
-    if (solution.solutionWaves.empty()) { return; }
-    const auto waveIndex = std::min(static_cast<std::size_t>(std::max(1, preferredWave) - 1),
-        solution.solutionWaves.size() - 1);
-    const auto &candidates = solution.solutionWaves[waveIndex];
-    if (candidates.empty()) { return; }
-    bomb_.id = candidates[seed % candidates.size()];
-    if (bomb_.impact) {
-        // Introduce an actual collision hazard: prefer a sheep which is the
-        // nearest blocker of another sheep, while retaining a solvable route.
-        // Try the preferred wave first, then the other dependency waves.
-        for (std::size_t offset = 0; offset < solution.solutionWaves.size(); ++offset) {
-            const auto &wave = solution.solutionWaves[(waveIndex + offset) % solution.solutionWaves.size()];
-            std::vector<SheepId> exposed;
-            for (const SheepId candidate : wave) {
-                if (std::any_of(board_->sheep().begin(), board_->sheep().end(),
-                    [this, candidate](const Sheep &attacker) {
-                        return board_->inspectMove(attacker.id).blocker == candidate;
-                    })) {
-                    exposed.push_back(candidate);
-                }
-            }
-            if (!exposed.empty()) {
-                bomb_.id = exposed[seed % exposed.size()];
-                break;
-            }
+void LevelController::prepareBombs(const LevelDefinition &definition) {
+    if (!board_) { return; }
+    const auto placements = planBombPlacement(*board_, definition);
+    bool timedTutorial = false;
+    bool impactTutorial = false;
+    for (const auto &placement : placements) {
+        if (bombs_.size() >= bombAccessoryEntities_.size()) {
+            LOG_ERROR("LevelController: not enough authored bomb accessory Sprites");
+            phase_ = Phase::Error;
+            return;
         }
-    }
-    bomb_.seconds = seconds;
-    bomb_.hitsRemaining = std::max(0, impactHits);
-    bomb_.state = BombSheep::State::Armed;
-    if (bombEntity_.isValid()) {
-        Bamboo::SpriteRendererComponentAPI::setCell(bombEntity_, 2, 1, bomb_.impact ? 1 : 0);
+        BombSheep bomb;
+        bomb.id = placement.id;
+        bomb.impact = placement.impact;
+        bomb.seconds = placement.seconds;
+        bomb.hitsRemaining = placement.hits;
+        bomb.state = BombSheep::State::Armed;
+        bomb.entity = bombAccessoryEntities_[bombs_.size()];
+        Bamboo::SpriteRendererComponentAPI::setCell(bomb.entity, 2, 1, bomb.impact ? 1 : 0);
+        const std::size_t index = bombs_.size();
+        bombs_.push_back(bomb);
+        if ((!bomb.impact && !timedTutorial) || (bomb.impact && !impactTutorial)) {
+            bombTutorialOrder_.push_back(index);
+            if (bomb.impact) { impactTutorial = true; } else { timedTutorial = true; }
+        }
+        LOG_INFO("Level %d: %s bomb sheep %u, %d required removals, %.1f seconds, %d hits",
+            currentLevel_, bomb.impact ? "impact" : "timed", bomb.id,
+            placement.requiredMoves, bomb.seconds, bomb.hitsRemaining);
     }
     updateBombHUD();
-
-    // Explain the mechanic on every entry, including replaying a completed
-    // level and restarting it. The countdown begins only after confirmation.
-    if (rootView_) {
-        const SheepVisual *visual = findVisual(bomb_.id);
+    // Both clocks stay paused while all applicable explanations are read.
+    // Replaying a level shows one card for each mechanic again.
+    if (rootView_ && !bombTutorialOrder_.empty()) {
         phase_ = Phase::Tutorial;
         rootView_->setBoardInputEnabled(false);
-        rootView_->showBombTutorial(settings_.immortalModeEnabled(), seconds,
-            visual ? visual->coat : 0, bomb_.impact, bomb_.hitsRemaining);
+        showBombTutorial();
     }
 }
 
+void LevelController::showBombTutorial() {
+    if (!rootView_ || bombTutorialCursor_ >= bombTutorialOrder_.size()) { return; }
+    const auto &bomb = bombs_[bombTutorialOrder_[bombTutorialCursor_]];
+    const SheepVisual *visual = findVisual(bomb.id);
+    const auto count = std::count_if(bombs_.begin(), bombs_.end(), [&bomb](const auto &other) {
+        return other.impact == bomb.impact;
+    });
+    rootView_->showBombTutorial(settings_.immortalModeEnabled(), bomb.seconds,
+        visual ? visual->coat : 0, bomb.impact, bomb.hitsRemaining, static_cast<int>(count));
+}
+
 bool LevelController::hitImpactBomb(SheepId attacker) {
-    if (!board_ || !bomb_.impact || bomb_.state != BombSheep::State::Armed ||
-        attacker == bomb_.id) {
-        return false;
-    }
+    if (!board_) { return false; }
     // Only the nearest obstacle actually receives this blocked move. A sheep
     // behind another sheep cannot be hit, and the bomb cannot hit itself.
     const auto move = board_->inspectMove(attacker);
-    if (move.state != MoveState::Blocked || move.blocker != bomb_.id) { return false; }
-    bomb_.hitsRemaining = std::max(0, bomb_.hitsRemaining - 1);
-    if (bomb_.hitsRemaining == 0) { expireBomb(); }
+    if (move.state != MoveState::Blocked || !move.blocker) { return false; }
+    const auto found = std::find_if(bombs_.begin(), bombs_.end(), [&move, attacker](const auto &bomb) {
+        return bomb.impact && bomb.state == BombSheep::State::Armed &&
+            bomb.id != attacker && bomb.id == *move.blocker;
+    });
+    if (found == bombs_.end()) { return false; }
+    found->hitsRemaining = std::max(0, found->hitsRemaining - 1);
+    if (found->hitsRemaining == 0) { expireBomb(*found); }
     updateBombHUD();
     return true;
 }
 
 void LevelController::startBombLevel() {
     if (phase_ != Phase::Tutorial) { return; }
+    ++bombTutorialCursor_;
+    if (bombTutorialCursor_ < bombTutorialOrder_.size()) {
+        showBombTutorial();
+        return;
+    }
     if (rootView_) {
         rootView_->hideBombTutorial();
         rootView_->setBoardInputEnabled(true);
@@ -678,17 +730,21 @@ PandaUI::Point LevelController::sheepScreenPosition(SheepId id) {
     };
 }
 
-void LevelController::expireBomb() {
+void LevelController::expireBomb(BombSheep &bomb) {
     clearHint();
     const bool harmless = settings_.immortalModeEnabled();
-    bomb_.state = harmless ? BombSheep::State::Defused : BombSheep::State::Exploded;
-    if (rootView_) { rootView_->playBombBurst(sheepScreenPosition(bomb_.id), harmless); }
+    if (harmless && beginDogRescue(bomb)) { return; }
+    // Missing authored art or an invalid route must never turn immortality
+    // into a defeat. Normal scenes take the animated rescue path above.
+    bomb.state = harmless ? BombSheep::State::Defused : BombSheep::State::Exploded;
+    if (rootView_) { rootView_->playBombBurst(sheepScreenPosition(bomb.id), harmless); }
     if (!harmless) {
         // A brief, non-graphic puff replaces the sheep before the defeat card.
         // No escape or victory can be completed while the explosion is playing.
         phase_ = Phase::BombExplosion;
-        bomb_.explosionElapsed = 0.f;
-        if (SheepVisual *visual = findVisual(bomb_.id); visual && visual->entity.isValid()) {
+        bombExplosionElapsed_ = 0.f;
+        fatalBombImpact_ = bomb.impact;
+        if (SheepVisual *visual = findVisual(bomb.id); visual && visual->entity.isValid()) {
             Bamboo::SpriteRendererComponentAPI::setColor(visual->entity, {1.f, 1.f, 1.f, 0.f});
         }
         if (rootView_) { rootView_->setBoardInputEnabled(false); }
@@ -696,49 +752,235 @@ void LevelController::expireBomb() {
     updateBombHUD();
 }
 
+float LevelController::dogOffscreenY() const {
+    const float cameraBottom = layout_.cameraPosition.y - layout_.cameraOrthoSize * .5f;
+    return (cameraBottom - layout_.worldRect.y) / layout_.cellWorldSize - 2.8f;
+}
+
+bool LevelController::beginDogRescue(BombSheep &bomb) {
+    auto *visual = findVisual(bomb.id);
+    if (!board_ || !layout_.valid() || !visual || !visual->entity.isValid() ||
+        !rescueDogEntity_.isValid() ||
+        !Bamboo::SpriteRendererComponentAPI::getTexture(rescueDogEntity_).isValid()) {
+        LOG_WARN("LevelController: dog rescue needs the authored ShepherdDogRescuer Sprite and texture");
+        return false;
+    }
+    const auto position = Bamboo::TransformComponentAPI::getPosition(visual->entity);
+    const float rotation = Bamboo::TransformComponentAPI::getRotationEuler(visual->entity).z;
+    const float angle = rotation * kPi / 180.f;
+    const DogRescue::Point bombPosition{
+        (position.x - layout_.worldRect.x) / layout_.cellWorldSize - std::sin(angle) * kBombBackOffset,
+        (position.y - layout_.worldRect.y) / layout_.cellWorldSize + std::cos(angle) * kBombBackOffset
+    };
+    std::vector<DogRescue::OtherSheepPose> runners;
+    for (const auto &runner : escapeHerd_.runners()) {
+        auto *runnerVisual = findVisual(runner.sheep.id);
+        if (!runnerVisual || !runnerVisual->entity.isValid()) { continue; }
+        const auto p = Bamboo::TransformComponentAPI::getPosition(runnerVisual->entity);
+        const float heading = Bamboo::TransformComponentAPI::getRotationEuler(runnerVisual->entity).z;
+        runners.push_back({runner.sheep.id,
+            {(p.x - layout_.worldRect.x) / layout_.cellWorldSize,
+             (p.y - layout_.worldRect.y) / layout_.cellWorldSize}, heading});
+    }
+    if (!dogRescue_.begin(*board_, bomb.id, bombPosition, rotation, dogOffscreenY(), runners)) {
+        LOG_WARN("LevelController: no safe dog route to sheep %u; keeping immortal protection", bomb.id);
+        return false;
+    }
+    dogRescueBomb_ = bomb.id;
+    rescueFlockPoses_.clear();
+    for (auto &sheep : sheepVisuals_) {
+        if (sheep.id == bomb.id || !sheep.entity.isValid()) { continue; }
+        const auto p = Bamboo::TransformComponentAPI::getPosition(sheep.entity);
+        rescueFlockPoses_.push_back({sheep.id,
+            {(p.x - layout_.worldRect.x) / layout_.cellWorldSize,
+             (p.y - layout_.worldRect.y) / layout_.cellWorldSize}, {}});
+    }
+    bomb.state = BombSheep::State::DogRescue;
+    phase_ = Phase::DogRescue;
+    if (rootView_) {
+        rootView_->setBoardInputEnabled(false);
+        rootView_->showDogRescueNotice();
+    }
+    applyDogRescuePose();
+    updateBombHUD();
+    return true;
+}
+
+void LevelController::updateDogRescue(float deltaTime) {
+    dogRescue_.setOffscreenY(dogOffscreenY());
+    dogRescue_.advance(deltaTime);
+    applyDogRescuePose(deltaTime);
+    if (dogRescue_.stage() != DogRescue::Stage::Finished) { return; }
+    for (auto &bomb : bombs_) {
+        if (bomb.id == dogRescueBomb_ && bomb.state == BombSheep::State::DogRescue) {
+            bomb.state = BombSheep::State::Defused;
+            break;
+        }
+    }
+    resetDogRescue();
+    phase_ = Phase::Playing;
+    if (rootView_) { rootView_->setBoardInputEnabled(true); }
+    updateBombHUD();
+}
+
+void LevelController::applyDogRescuePose(float deltaTime) {
+    if (!rescueDogEntity_.isValid() || !layout_.valid() || !dogRescue_.active()) { return; }
+    const auto &pose = dogRescue_.pose();
+    const auto pivot = ShepherdDogAnimation::pivot(pose.frame);
+    const float angle = pose.rotationDegrees * kPi / 180.f;
+    if (pose.clearingFlock) {
+        // In a sealed crowd the flock makes a little room for its shepherd.
+        // Only temporary visual offsets change; puzzle cells and sheep IDs do
+        // not move. The original poses are restored on exit or cancellation.
+        const float follow = 1.f - std::exp(-16.f * std::max(0.f, deltaTime));
+        for (auto &saved : rescueFlockPoses_) {
+            auto *sheep = findVisual(saved.id);
+            if (!sheep || !sheep->entity.isValid()) { continue; }
+            const float dx = saved.position.x - pose.position.x;
+            const float dy = saved.position.y - pose.position.y;
+            const float along = -dx * std::sin(angle) + dy * std::cos(angle);
+            const float across = dx * std::cos(angle) + dy * std::sin(angle);
+            const float proximity = clamp01((2.3f - std::abs(along - .25f)) / 1.25f);
+            const float sign = across == 0.f ? (saved.id % 2 ? 1.f : -1.f)
+                                             : (across > 0.f ? 1.f : -1.f);
+            const float push = std::clamp(1.05f - std::abs(across), 0.f, .58f) * proximity * sign;
+            saved.offset.x += (std::cos(angle) * push - saved.offset.x) * follow;
+            saved.offset.y += (std::sin(angle) * push - saved.offset.y) * follow;
+            Bamboo::TransformComponentAPI::setPosition(sheep->entity, {
+                layout_.worldRect.x + (saved.position.x + saved.offset.x) * layout_.cellWorldSize,
+                layout_.worldRect.y + (saved.position.y + saved.offset.y) * layout_.cellWorldSize, .1f
+            });
+        }
+    }
+    const float size = layout_.cellWorldSize * ShepherdDogAnimation::kQuadSize;
+    // Register the painted torso, not the wagging tail's bounding box. This
+    // removes atlas placement jitter without distorting the dog's anatomy.
+    const float localX = (.5f - pivot.x) * size;
+    const float localY = (pivot.y - .5f) * size;
+    Bamboo::TransformComponentAPI::setPosition(rescueDogEntity_, {
+        layout_.worldRect.x + pose.position.x * layout_.cellWorldSize +
+            localX * std::cos(angle) - localY * std::sin(angle),
+        layout_.worldRect.y + (pose.position.y + pose.lift) * layout_.cellWorldSize +
+            localX * std::sin(angle) + localY * std::cos(angle), .20f
+    });
+    Bamboo::TransformComponentAPI::setRotationEuler(rescueDogEntity_, {0.f, 0.f, pose.rotationDegrees});
+    Bamboo::TransformComponentAPI::setScale(rescueDogEntity_, {size, size, 1.f});
+    Bamboo::SpriteRendererComponentAPI::setCell(rescueDogEntity_, ShepherdDogAnimation::kColumns,
+        ShepherdDogAnimation::kRows, ShepherdDogAnimation::encodedCell(pose.frame));
+    Bamboo::SpriteRendererComponentAPI::setColor(rescueDogEntity_, {1.f, 1.f, 1.f, 1.f});
+    if (rescueDogShadow_.isValid()) {
+        // Sheep have no ground-contact shadow, so the dog only gains a faint
+        // one while airborne. Fade from zero at takeoff/landing, and lighten
+        // it with height instead of darkening the grounded silhouette.
+        const float airborne = clamp01((pose.lift - .035f) / .12f);
+        const float shadowAlpha = .11f * airborne * airborne * (3.f - 2.f * airborne) *
+            (1.f - .25f * clamp01(pose.lift / .65f));
+        const float shadowSize = size * (1.f - pose.lift * .08f);
+        const float sx = (.5f - pivot.x) * shadowSize;
+        const float sy = (pivot.y - .5f) * shadowSize;
+        Bamboo::TransformComponentAPI::setPosition(rescueDogShadow_, {
+            layout_.worldRect.x + (pose.position.x + .045f) * layout_.cellWorldSize +
+                sx * std::cos(angle) - sy * std::sin(angle),
+            layout_.worldRect.y + (pose.position.y - .07f) * layout_.cellWorldSize +
+                sx * std::sin(angle) + sy * std::cos(angle), .09f
+        });
+        Bamboo::TransformComponentAPI::setScale(rescueDogShadow_, {shadowSize, shadowSize, 1.f});
+        Bamboo::TransformComponentAPI::setRotationEuler(rescueDogShadow_, {0.f, 0.f, pose.rotationDegrees});
+        Bamboo::SpriteRendererComponentAPI::setCell(rescueDogShadow_, ShepherdDogAnimation::kColumns,
+            ShepherdDogAnimation::kRows, ShepherdDogAnimation::encodedCell(pose.frame));
+        Bamboo::SpriteRendererComponentAPI::setColor(rescueDogShadow_, {0.f, 0.f, 0.f, shadowAlpha});
+    }
+}
+
+void LevelController::resetDogRescue() {
+    if (layout_.valid()) {
+        for (const auto &saved : rescueFlockPoses_) {
+            auto *sheep = findVisual(saved.id);
+            if (sheep && sheep->entity.isValid()) {
+                Bamboo::TransformComponentAPI::setPosition(sheep->entity, {
+                    layout_.worldRect.x + saved.position.x * layout_.cellWorldSize,
+                    layout_.worldRect.y + saved.position.y * layout_.cellWorldSize, .1f
+                });
+            }
+        }
+    }
+    rescueFlockPoses_.clear();
+    dogRescue_.clear();
+    dogRescueBomb_ = kInvalidSheepId;
+    if (rescueDogEntity_.isValid()) {
+        Bamboo::SpriteRendererComponentAPI::setColor(rescueDogEntity_, {1.f, 1.f, 1.f, 0.f});
+    }
+    if (rootView_) { rootView_->hideDogRescueNotice(); }
+    if (rescueDogShadow_.isValid()) {
+        Bamboo::SpriteRendererComponentAPI::setColor(rescueDogShadow_, {0.f, 0.f, 0.f, 0.f});
+    }
+}
+
 void LevelController::updateBombHUD() {
     if (!rootView_) { return; }
-    rootView_->updateBombTimer(bomb_.seconds, bomb_.state != BombSheep::State::None,
-        bomb_.state == BombSheep::State::Rescued, bomb_.state == BombSheep::State::Defused,
-        settings_.immortalModeEnabled(), bomb_.impact, bomb_.hitsRemaining);
+    std::vector<UI::BombHUDState> states;
+    for (const auto &bomb : bombs_) {
+        UI::BombHUDState state;
+        state.seconds = bomb.seconds;
+        state.hits = bomb.hitsRemaining;
+        state.impact = bomb.impact;
+        state.rescued = bomb.state == BombSheep::State::Rescued;
+        state.defused = bomb.state == BombSheep::State::Defused;
+        states.push_back(state);
+    }
+    rootView_->updateBombStatus(states, settings_.immortalModeEnabled());
 }
 
 void LevelController::updateBombVisual() {
-    SheepVisual *visual = findVisual(bomb_.id);
-    const bool visible = bomb_.state == BombSheep::State::Armed && visual &&
-        visual->entity.isValid() && layout_.valid() && bombEntity_.isValid() &&
-        Bamboo::SpriteRendererComponentAPI::getTexture(bombEntity_).isValid();
-    if (bombEntity_.isValid()) {
-        Bamboo::SpriteRendererComponentAPI::setColor(bombEntity_, {1.f, 1.f, 1.f, visible ? 1.f : 0.f});
-    }
-    if (!visible) {
-        if (rootView_) { rootView_->setBombMarker({}, 0.f, 0.f, 0, false); }
-        return;
-    }
-    const auto position = Bamboo::TransformComponentAPI::getPosition(visual->entity);
-    const auto rotation = Bamboo::TransformComponentAPI::getRotationEuler(visual->entity);
-    const float angle = rotation.z * kPi / 180.f;
-    const float offset = layout_.cellWorldSize * kBombBackOffset;
-    if (bombEntity_.isValid()) {
-        Bamboo::TransformComponentAPI::setPosition(bombEntity_, {
+    std::vector<UI::BombDisplay> displays;
+    for (auto &bomb : bombs_) {
+        SheepVisual *visual = findVisual(bomb.id);
+        const bool dogRescue = bomb.state == BombSheep::State::DogRescue && bomb.id == dogRescueBomb_;
+        const bool visible = (bomb.state == BombSheep::State::Armed || dogRescue) && visual &&
+            visual->entity.isValid() && layout_.valid() && bomb.entity.isValid() &&
+            Bamboo::SpriteRendererComponentAPI::getTexture(bomb.entity).isValid();
+        if (bomb.entity.isValid()) {
+            Bamboo::SpriteRendererComponentAPI::setColor(bomb.entity,
+                {1.f, 1.f, 1.f, visible ? 1.f : 0.f});
+        }
+        if (!visible) { continue; }
+        if (dogRescue && dogRescue_.pose().carrying) {
+            const auto &pose = dogRescue_.pose();
+            const float x = layout_.worldRect.x + pose.bombPosition.x * layout_.cellWorldSize;
+            const float y = layout_.worldRect.y + (pose.bombPosition.y + pose.lift) * layout_.cellWorldSize;
+            Bamboo::TransformComponentAPI::setPosition(bomb.entity, {x, y, .22f});
+            Bamboo::TransformComponentAPI::setRotationEuler(bomb.entity, {0.f, 0.f, pose.bombRotationDegrees});
+            const float size = layout_.cellWorldSize * kBombSizeInCells;
+            Bamboo::TransformComponentAPI::setScale(bomb.entity, {size, size, 1.f});
+            // The disarmed display goes dark after the jaws take its strap.
+            continue;
+        }
+        const auto position = Bamboo::TransformComponentAPI::getPosition(visual->entity);
+        const auto rotation = Bamboo::TransformComponentAPI::getRotationEuler(visual->entity);
+        const float angle = rotation.z * kPi / 180.f;
+        const float offset = layout_.cellWorldSize * kBombBackOffset;
+        Bamboo::TransformComponentAPI::setPosition(bomb.entity, {
             position.x - std::sin(angle) * offset,
             position.y + std::cos(angle) * offset, 0.16f
         });
-        Bamboo::TransformComponentAPI::setRotationEuler(bombEntity_, rotation);
+        Bamboo::TransformComponentAPI::setRotationEuler(bomb.entity, rotation);
         const float size = layout_.cellWorldSize * kBombSizeInCells;
-        Bamboo::TransformComponentAPI::setScale(bombEntity_, {size, size, 1.f});
-    }
-    if (rootView_) {
+        Bamboo::TransformComponentAPI::setScale(bomb.entity, {size, size, 1.f});
         const float cellPixels = layout_.screenRect.width / static_cast<float>(layout_.columns);
-        auto displayCenter = sheepScreenPosition(bomb_.id);
+        auto displayCenter = sheepScreenPosition(bomb.id);
         // Same back offset, size and rotation as the world Sprite. Digits are
         // painted in its display, including throughout turns and blocked bumps.
         displayCenter.x -= std::sin(angle) * cellPixels * kBombBackOffset;
         displayCenter.y -= std::cos(angle) * cellPixels * kBombBackOffset;
-        rootView_->setBombMarker(displayCenter, cellPixels * kBombSizeInCells,
-            rotation.z, bomb_.impact ? bomb_.hitsRemaining : static_cast<int>(std::ceil(bomb_.seconds)),
-            true, bomb_.impact);
+        UI::BombDisplay display;
+        display.center = displayCenter;
+        display.size = cellPixels * kBombSizeInCells;
+        display.rotationDegrees = rotation.z;
+        display.value = bomb.impact ? bomb.hitsRemaining : static_cast<int>(std::ceil(bomb.seconds));
+        display.impact = bomb.impact;
+        displays.push_back(display);
     }
+    if (rootView_) { rootView_->setBombMarkers(displays); }
 }
 
 void LevelController::selectCell(Cell cell) {
@@ -852,8 +1094,15 @@ void LevelController::showHint() {
     clearHint();
     const std::vector<SheepId> available = board_->escapableSheep();
     // While the clock runs, help clear the bomb sheep's actual blocker chain.
-    if (bomb_.state == BombSheep::State::Armed && board_->findSheep(bomb_.id)) {
-        SheepId target = bomb_.id;
+    const BombSheep *priority = nullptr;
+    for (const auto &bomb : bombs_) {
+        if (bomb.state != BombSheep::State::Armed || !board_->findSheep(bomb.id)) { continue; }
+        if (!priority || (!bomb.impact && (priority->impact || bomb.seconds < priority->seconds))) {
+            priority = &bomb;
+        }
+    }
+    if (priority) {
+        SheepId target = priority->id;
         for (std::size_t depth = 0; depth < board_->sheepCount(); ++depth) {
             const MoveCheck move = board_->inspectMove(target);
             if (move.canEscape()) {

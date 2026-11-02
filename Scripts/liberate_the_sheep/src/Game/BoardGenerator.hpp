@@ -21,12 +21,17 @@ struct GenerationConfig {
     int maxAttempts{96};
     int candidateChoicePool{5};
 
-    // These ranges are preferences used to rank complete candidates. Density and
-    // solvability remain hard requirements.
+    // These ranges rank candidates. Target density is a packing goal; if it
+    // cannot be reached, retain the fullest valid solvable candidate instead
+    // of rejecting a playable level. Solvability remains a hard requirement.
     int minInitialEscapable{1};
     int maxInitialEscapable{8};
     int minSolutionWaves{1};
     int maxSolutionWaves{64};
+
+    // Prefer a small opening frontier and long blocker chains. Disabled for
+    // introductory layouts whose existing construction must stay unchanged.
+    bool preferTightDependencies{false};
 };
 
 enum class GenerationStatus {

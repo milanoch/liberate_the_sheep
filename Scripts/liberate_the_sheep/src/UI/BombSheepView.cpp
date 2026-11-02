@@ -1,4 +1,5 @@
 #include "UI/BombSheepView.hpp"
+#include "UI/GameplayRootView.hpp"
 
 #include "UI/UIStyle.hpp"
 
@@ -40,8 +41,8 @@ void drawDigits(PandaUI::UIRenderer &renderer, PandaUI::Point bombCenter,
     const auto transform = glm::rotate(
         glm::translate(glm::mat4(1.f), glm::vec3(bombCenter.x, bombCenter.y, 0.f)),
         -worldRotationDegrees * kPi / 180.f, glm::vec3(0.f, 0.f, 1.f));
-    const auto color = impact ? PandaUI::Color(0xFFF2D7FF)
-        : seconds <= 10 ? PandaUI::Color(0xFF6B53FF) : PandaUI::Color(0xF97865FF);
+    const auto color = impact ? Colors::cream()
+        : seconds <= 10 ? Colors::danger() : PandaUI::Color(0xE18D78FF);
     const auto drawSegment = [&](float x, float y, float width, float height) {
         PandaUI::UIRenderer::RectData bar;
         bar.center = {originX + x * scale, originY + y * scale, 0.f};
@@ -78,6 +79,11 @@ void drawDisc(PandaUI::UIRenderer &renderer, PandaUI::Point center,
 
 BombSheepPicture::BombSheepPicture() {
     setBackgroundColor(Colors::transparent());
+    surface().setBackgroundGradient(PandaUI::SurfaceGradient(
+        PandaUI::Color(0xFFF1D50A), PandaUI::Color(0xFFF1D503)));
+    surface().setCornerRadius(14.f);
+    surface().setBorderWidth(1.f);
+    surface().setBorderColor(PandaUI::Color(0xFFF1D514));
     setUserInteractionEnabled(false);
     layout().setWidth(PandaUI::Length::percent(100.f));
     layout().setHeight(PandaUI::Length::points(136.f));
@@ -149,14 +155,16 @@ BombFieldOverlay::BombFieldOverlay() {
 
 }
 
+BombFieldOverlay::~BombFieldOverlay() = default;
+
 void BombFieldOverlay::setMarker(PandaUI::Point center, float bombSize,
                                 float rotationDegrees, int seconds, bool visible, bool impact) {
-    displayCenter_ = center;
-    displaySize_ = bombSize;
-    displayRotation_ = rotationDegrees;
-    displayedSeconds_ = std::clamp(seconds, 0, 5999);
-    displayVisible_ = visible && bombSize > 0.f;
-    displayImpact_ = impact;
+    if (!visible || bombSize <= 0.f) { setMarkers({}); return; }
+    setMarkers({{center, bombSize, rotationDegrees, seconds, impact}});
+}
+
+void BombFieldOverlay::setMarkers(const std::vector<BombDisplay> &displays) {
+    displays_ = displays;
     setNeedsDisplay();
 }
 
@@ -164,14 +172,12 @@ void BombFieldOverlay::playBurst(PandaUI::Point center, bool harmless) {
     burstCenter_ = center;
     burstElapsed_ = 0.f;
     harmless_ = harmless;
-    displayVisible_ = false;
     setNeedsDisplay();
 }
 
 void BombFieldOverlay::reset() {
-    displayVisible_ = false;
+    displays_.clear();
     burstElapsed_ = kBurstDuration;
-    displayedSeconds_ = 0;
     setNeedsDisplay();
 }
 
@@ -185,9 +191,9 @@ void BombFieldOverlay::update(double deltaTime) {
 void BombFieldOverlay::draw(float, float) {
     if (!getContext()) { return; }
     auto &renderer = getContext()->getRenderer();
-    if (displayVisible_) {
-        drawDigits(renderer, displayCenter_, displaySize_, displayRotation_, displayedSeconds_,
-                   displayImpact_);
+    for (const auto &display : displays_) {
+        drawDigits(renderer, display.center, display.size, display.rotationDegrees, display.value,
+                   display.impact);
     }
     if (burstElapsed_ >= kBurstDuration) { return; }
     const float t = burstElapsed_ / kBurstDuration;
